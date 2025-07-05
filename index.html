@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brixies Exporter - Download</title>
+    <meta name="description" content="Download your Brixies Builder sections export">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://zmdx4.github.io/brixies-exporter-web/">
+    <meta property="og:title" content="Brixies Exporter">
+    <meta property="og:description" content="Download your Brixies Builder sections export">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://zmdx4.github.io/brixies-exporter-web/">
+    <meta property="twitter:title" content="Brixies Exporter">
+    <meta property="twitter:description" content="Download your Brixies Builder sections export">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 32px;
+            text-align: center;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 32px;
+        }
+
+        .export-info {
+            background: #f7fafc;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .export-id {
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+            background: #e2e8f0;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #2d3748;
+            margin: 12px 0;
+            display: inline-block;
+        }
+
+        .sections-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .section-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .section-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+        }
+
+        .section-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            margin: 0 auto 12px;
+        }
+
+        .section-name {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 4px;
+        }
+
+        .section-category {
+            font-size: 12px;
+            color: #718096;
+            background: #edf2f7;
+            padding: 2px 8px;
+            border-radius: 12px;
+            display: inline-block;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin: 32px 0;
+        }
+
+        .btn {
+            padding: 16px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(72, 187, 120, 0.3);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .preview-section {
+            background: #1a202c;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 24px;
+        }
+
+        .preview-title {
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .preview-code {
+            background: #2d3748;
+            color: #68d391;
+            padding: 16px;
+            border-radius: 8px;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e2e8f0;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #fed7d7;
+            border: 1px solid #feb2b2;
+            border-radius: 12px;
+            padding: 16px;
+            color: #c53030;
+            text-align: center;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #718096;
+            font-size: 14px;
+        }
+
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .action-buttons {
+                grid-template-columns: 1fr;
+            }
+            
+            .sections-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                <span>🧱</span>
+                Brixies Export Ready
+            </h1>
+            <p>Your sections are ready for download</p>
+        </div>
+
+        <div class="content">
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p>Loading your export...</p>
+            </div>
+
+            <div id="content" style="display: none;">
+                <div class="export-info">
+                    <h3>Export Details</h3>
+                    <div class="export-id" id="exportId">export-abc123-def456</div>
+                    <p><span id="sectionCount">0</span> sections prepared for Bricks Builder</p>
+                </div>
+
+                <div class="sections-grid" id="sectionsGrid">
+                    <!-- Sections will be populated here -->
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-primary" onclick="copyToClipboard()">
+                        �� Copy to Clipboard
+                    </button>
+                    <button class="btn btn-secondary" onclick="downloadJSON()">
+                        💾 Download JSON
+                    </button>
+                </div>
+
+                <div class="preview-section">
+                    <div class="preview-title">Preview:</div>
+                    <div class="preview-code" id="previewCode">
+                        // Loading preview...
+                    </div>
+                </div>
+            </div>
+
+            <div id="error" class="error" style="display: none;">
+                <h3>Export Not Found</h3>
+                <p id="errorMessage">The export you're looking for doesn't exist or has expired.</p>
+                <button class="btn btn-secondary" onclick="goHome()" style="margin-top: 16px;">
+                    🏠 Go Home
+                </button>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Powered by <a href="https://github.com/ZMDx4/brixies-sections-data-cf" target="_blank">Brixies Sections</a></p>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const CONFIG = {
+            githubRepo: 'ZMDx4/brixies-sections-data-cf',
+            githubRawBase: 'https://raw.githubusercontent.com',
+            maxRetries: 3,
+            retryDelay: 1000
+        };
+
+        // Get export ID from URL
+        function getExportId() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const pathParts = window.location.pathname.split('/');
+            return pathParts[pathParts.length - 1] || urlParams.get('id') || null;
+        }
+
+        // Load export data
+        async function loadExport() {
+            const exportId = getExportId();
+            
+            if (!exportId) {
+                showError('No export ID provided');
+                return;
+            }
+
+            try {
+                // Try to load from GitHub first
+                const metadata = await loadMetadataFromGitHub(exportId);
+                if (metadata) {
+                    await loadSectionsFromGitHub(metadata);
+                    return;
+                }
+
+                // Show demo data for testing
+                showDemoData(exportId);
+
+            } catch (error) {
+                console.error('Failed to load export:', error);
+                showError('Failed to load export. Please try again.');
+            }
+        }
+
+        // Load metadata from GitHub
+        async function loadMetadataFromGitHub(exportId) {
+            try {
+                const response = await fetch(`${CONFIG.githubRawBase}/${CONFIG.githubRepo}/main/exports/${exportId}.json`);
+                if (!response.ok) {
+                    return null;
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('Failed to load metadata from GitHub:', error);
+                return null;
+            }
+        }
+
+        // Load sections from GitHub
+        async function loadSectionsFromGitHub(metadata) {
+            const sections = [];
+            
+            for (const section of metadata.sections) {
+                try {
+                    const response = await fetch(section.remoteUrl);
+                    if (response.ok) {
+                        const sectionData = await response.json();
+                        sections.push({
+                            name: section.name,
+                            category: section.category,
+                            code: sectionData
+                        });
+                    }
+                } catch (error) {
+                    console.error(`Failed to load section ${section.name}:`, error);
+                }
+            }
+
+            const combinedCode = JSON.stringify(sections, null, 2);
+            
+            loadExportData({
+                exportId: metadata.exportId,
+                sections: metadata.sections,
+                combinedCode
+            });
+        }
+
+        // Show demo data for testing
+        function showDemoData(exportId) {
+            const demoData = {
+                exportId: exportId,
+                sections: [
+                    { name: 'Header 1', category: 'Header' },
+                    { name: 'Hero Section 1', category: 'Hero' },
+                    { name: 'Portfolio Section 1', category: 'Portfolio' },
+                    { name: 'Contact Section 1', category: 'Contact' },
+                    { name: 'Footer Section 1', category: 'Footer' }
+                ],
+                combinedCode: JSON.stringify({
+                    sections: [
+                        {
+                            name: 'Header 1',
+                            category: 'Header',
+                            code: {
+                                content: [{ type: 'header', elements: [] }],
+                                globalClasses: [],
+                                defaultClassRoot: 'brixies-header-1'
+                            }
+                        },
+                        {
+                            name: 'Hero Section 1',
+                            category: 'Hero',
+                            code: {
+                                content: [{ type: 'hero', elements: [] }],
+                                globalClasses: [],
+                                defaultClassRoot: 'brixies-hero-section-1'
+                            }
+                        }
+                    ]
+                }, null, 2)
+            };
+
+            loadExportData(demoData);
+        }
+
+        // Load export data into UI
+        function loadExportData(data) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('content').style.display = 'block';
+
+            // Update export info
+            document.getElementById('exportId').textContent = data.exportId;
+            document.getElementById('sectionCount').textContent = data.sections.length;
+
+            // Populate sections grid
+            const sectionsGrid = document.getElementById('sectionsGrid');
+            sectionsGrid.innerHTML = data.sections.map(section => `
+                <div class="section-card">
+                    <div class="section-icon">${getCategoryIcon(section.category)}</div>
+                    <div class="section-name">${section.name}</div>
+                    <div class="section-category">${section.category}</div>
+                </div>
+            `).join('');
+
+            // Update preview
+            document.getElementById('previewCode').textContent = data.combinedCode.substring(0, 500) + '...';
+
+            // Store data for download/copy
+            window.exportData = data;
+        }
+
+        function getCategoryIcon(category) {
+            const icons = {
+                'Header': '📋',
+                'Hero': '⭐',
+                'Portfolio': '🎨',
+                'Contact': '📞',
+                'About': 'ℹ️',
+                'Testimonial': '💬',
+                'Pricing': '💰',
+                'Footer': '🔗',
+                'Feature': '✨',
+                'CTA': '🎯',
+                'Banner Section': '🎪',
+                'Blog Sections': '📝',
+                'Other': '📄'
+            };
+            return icons[category] || '📄';
+        }
+
+        function copyToClipboard() {
+            if (!window.exportData) {
+                alert('No export data available');
+                return;
+            }
+
+            const text = window.exportData.combinedCode;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('Copied to clipboard!');
+            });
+        }
+
+        function downloadJSON() {
+            if (!window.exportData) {
+                alert('No export data available');
+                return;
+            }
+
+            const dataStr = window.exportData.combinedCode;
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `brixies-export-${window.exportData.exportId}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        function showError(message) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('errorMessage').textContent = message;
+        }
+
+        function goHome() {
+            window.location.href = '/';
+        }
+
+        // Initialize
+        loadExport();
+    </script>
+</body>
+</html>
