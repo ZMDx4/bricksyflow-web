@@ -710,6 +710,8 @@
         let exportData = null;
         let sections = [];
         let errors = [];
+        let metadataIndex = null;
+        let classPrefix = '';
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
@@ -807,39 +809,82 @@
             });
         }
 
+        async function loadMetadataIndex() {
+            if (metadataIndex) return metadataIndex;
+            const url = 'https://raw.githubusercontent.com/ZMDx4/brixies-sections-data-cf/main/metadata-index.json';
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Failed to load metadata index from GitHub');
+            metadataIndex = await response.json();
+            return metadataIndex;
+        }
+
         function handlePasteData(data) {
             clearErrors();
-            
+            // Accept either JSON array or newline-separated list
+            let sectionNames = [];
             try {
-                // Try to parse as JSON
-                const parsed = JSON.parse(data);
-                
-                if (parsed.sections && Array.isArray(parsed.sections)) {
-                    exportData = parsed;
-                    sections = parsed.sections;
-                    showSections();
-                    goToStep(2);
+                if (data.trim().startsWith('[')) {
+                    sectionNames = JSON.parse(data);
                 } else {
-                    throw new Error('Invalid export data format - missing sections array');
+                    sectionNames = data.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
                 }
+                if (!Array.isArray(sectionNames) || sectionNames.length === 0) throw new Error('No section names found');
             } catch (error) {
-                addError(1, `Invalid JSON data: ${error.message}`);
+                addError(1, `Invalid section names: ${error.message}`);
+                return;
             }
+            // Load metadata and map names
+            loadMetadataIndex().then(meta => {
+                sections = sectionNames.map(name => {
+                    let found = null;
+                    for (const category in meta.sections) {
+                        if (meta.sections[category][name]) {
+                            found = meta.sections[category][name];
+                            return {
+                                name,
+                                category,
+                                defaultClass: found.defaultClass,
+                                customClass: '',
+                            };
+                        }
+                    }
+                    addError(1, `Section "${name}" not found in metadata index.`);
+                    return {
+                        name,
+                        category: '',
+                        defaultClass: '',
+                        customClass: '',
+                    };
+                });
+                showSections();
+                goToStep(2);
+            }).catch(err => {
+                addError(1, `Failed to load metadata: ${err.message}`);
+            });
         }
 
         function showSections() {
             document.getElementById('sectionsContainer').style.display = 'block';
             document.getElementById('generateBtn').disabled = false;
-            
+            // Add class prefix input
+            let prefixHtml = `<div style="margin-bottom:24px;"><label style="font-weight:600;">Class Prefix:</label> <input id='classPrefixInput' type='text' value='${classPrefix}' style='margin-left:8px;padding:4px 8px;border-radius:6px;border:1px solid #ccc;font-size:14px;width:120px;'></div>`;
             const grid = document.getElementById('sectionsGrid');
-            grid.innerHTML = sections.map((section, index) => createSectionCard(section, index)).join('');
-            
+            grid.innerHTML = prefixHtml + sections.map((section, index) => createSectionCard(section, index)).join('');
+            document.getElementById('classPrefixInput').addEventListener('input', e => {
+                classPrefix = e.target.value;
+                // Update all class names
+                sections.forEach((section, idx) => {
+                    if (section.defaultClass) {
+                        section.customClass = classPrefix ? `${classPrefix}-${section.defaultClass.replace(/^[^-]+-/, '')}` : section.defaultClass;
+                        document.querySelectorAll('.input-field')[idx].value = section.customClass;
+                    }
+                });
+            });
             setupDragAndDrop();
         }
 
         function createSectionCard(section, index) {
             const categoryIcon = getCategoryIcon(section.category);
-            
             return `
                 <div class="section-card" data-index="${index}" draggable="true">
                     <div class="section-order">${index + 1}</div>
@@ -856,7 +901,7 @@
                         <input 
                             type="text" 
                             class="input-field" 
-                            value="${section.customClass || section.suggestedClass}"
+                            value="${section.customClass || section.defaultClass || ''}"
                             onchange="updateSectionClass(${index}, this.value)"
                             placeholder="Enter class name..."
                         >
