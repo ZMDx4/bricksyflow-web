@@ -845,6 +845,7 @@
                                 category,
                                 defaultClass: found.defaultClass,
                                 customClass: '',
+                                remoteUrl: found.remoteUrl
                             };
                         }
                     }
@@ -854,6 +855,7 @@
                         category: '',
                         defaultClass: '',
                         customClass: '',
+                        remoteUrl: ''
                     };
                 });
                 showSections();
@@ -1048,21 +1050,16 @@
 
         async function fetchSectionData(section) {
             try {
-                // Map section names to actual filenames in the repository
-                const filename = mapSectionNameToFilename(section.name, section.category);
-                const categoryFolder = mapCategoryToFolder(section.category);
-                
-                // Construct GitHub raw URL
-                const url = `https://raw.githubusercontent.com/ZMDx4/brixies-sections-data-cf/main/sections/${categoryFolder}/${filename}.json`;
-                
+                if (!section.remoteUrl) {
+                    throw new Error(`No remoteUrl for section: ${section.name}`);
+                }
+                const url = section.remoteUrl;
                 console.log(`Fetching: ${url}`);
                 console.log(`Section: ${section.name}, Category: ${section.category}, Custom Class: ${section.customClass || section.suggestedClass}`);
-                
                 const response = await fetch(url);
                 if (!response.ok) {
                     throw new Error(`Failed to fetch ${section.name}: ${response.status}`);
                 }
-                
                 return await response.json();
             } catch (error) {
                 console.error(`Error fetching section ${section.name}:`, error);
