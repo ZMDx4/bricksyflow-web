@@ -630,9 +630,72 @@ function mapCssGlobalClassesToIds(content, globalClasses) {
     content.forEach(remap);
 }
 
-// In your export logic, after merging allContent and allGlobalClasses:
-// mapCssGlobalClassesToIds(allContent, allGlobalClasses);
-// ... existing code ...
+// Helper: Generate a unique ID for a class name
+function generateClassId(className) {
+    // Simple hash or base36 of className for uniqueness
+    let hash = 0;
+    for (let i = 0; i < className.length; i++) {
+        hash = ((hash << 5) - hash) + className.charCodeAt(i);
+        hash |= 0;
+    }
+    return Math.abs(hash).toString(36).slice(0, 6);
+}
+
+// Helper: Update globalClasses and remap _cssGlobalClasses to IDs
+function updateGlobalClassesAndRemap(content, globalClasses, classNameMap) {
+    // Build a map of className -> globalClass
+    const nameToClass = {};
+    globalClasses.forEach(cls => {
+        if (cls.name) nameToClass[cls.name] = cls;
+    });
+    // For each className in classNameMap, update or create globalClass
+    Object.entries(classNameMap).forEach(([oldName, newName]) => {
+        if (oldName === newName) return;
+        let existing = globalClasses.find(cls => cls.name === newName);
+        if (!existing) {
+            // Find the old class
+            let oldClass = nameToClass[oldName];
+            if (oldClass) {
+                // Clone and update
+                const newId = generateClassId(newName);
+                const newClass = { ...oldClass, id: newId, name: newName };
+                globalClasses.push(newClass);
+                nameToClass[newName] = newClass;
+            }
+        }
+    });
+    // Build name->id map
+    const nameToId = {};
+    globalClasses.forEach(cls => {
+        if (cls.name) nameToId[cls.name] = cls.id;
+    });
+    // Remap _cssGlobalClasses in content
+    function remap(node) {
+        if (node && typeof node === 'object') {
+            if (node.settings && Array.isArray(node.settings._cssGlobalClasses)) {
+                node.settings._cssGlobalClasses = node.settings._cssGlobalClasses
+                    .map(name => nameToId[classNameMap[name] || name] || name)
+                    .filter(Boolean);
+            }
+            if (Array.isArray(node.children)) {
+                node.children.forEach(childId => {}); // No-op, handled by recursion
+            }
+            for (const key in node) {
+                if (typeof node[key] === 'object' && node[key] !== null) {
+                    remap(node[key]);
+                }
+            }
+        }
+    }
+    content.forEach(remap);
+}
+
 // In generateBricksJSON, after merging allContent and allGlobalClasses, before output:
-mapCssGlobalClassesToIds(allContent, allGlobalClasses);
-// ... existing code ...
+// Build a classNameMap from original to custom class names
+const classNameMap = {};
+sections.forEach(section => {
+    if (section.defaultClass && section.customClass && section.defaultClass !== section.customClass) {
+        classNameMap[section.defaultClass] = section.customClass;
+    }
+});
+updateGlobalClassesAndRemap(allContent, allGlobalClasses, classNameMap);
