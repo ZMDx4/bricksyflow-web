@@ -768,18 +768,34 @@
             document.getElementById('generateBtn').addEventListener('click', generateBricksJSON);
         }
 
-        function generateBricksJSON() {
+        async function generateBricksJSON() {
             try {
+                const generateBtn = document.getElementById('generateBtn');
+                generateBtn.disabled = true;
+                generateBtn.innerHTML = '<span>⏳</span> Fetching sections...';
+
+                // Fetch all section data from GitHub
+                const combinedSections = [];
+                
+                for (let i = 0; i < sections.length; i++) {
+                    const section = sections[i];
+                    const sectionData = await fetchSectionData(section);
+                    
+                    if (sectionData) {
+                        // Replace CSS classes in the section data
+                        const updatedSectionData = replaceCSSClasses(sectionData, section.customClass || section.suggestedClass);
+                        combinedSections.push(updatedSectionData);
+                    }
+                    
+                    // Update progress
+                    generateBtn.innerHTML = `<span>⏳</span> Processing ${i + 1}/${sections.length} sections...`;
+                }
+
                 // Create the final export structure
                 const finalExport = {
                     exportId: exportData.exportId,
                     timestamp: new Date().toISOString(),
-                    sections: sections.map(section => ({
-                        name: section.name,
-                        category: section.category,
-                        className: section.customClass || section.suggestedClass,
-                        order: section.order || 1
-                    })),
+                    sections: combinedSections,
                     totalSections: sections.length,
                     generatedAt: new Date().toISOString(),
                     version: '1.0.0'
@@ -792,12 +808,181 @@
                 document.getElementById('outputSection').style.display = 'block';
                 showSuccess('Bricks JSON generated successfully!');
                 
+                // Reset button
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = '<span>🎯</span> Generate Bricks JSON';
+                
                 // Scroll to output
                 document.getElementById('outputSection').scrollIntoView({ behavior: 'smooth' });
                 
             } catch (error) {
+                console.error('Error generating JSON:', error);
                 showError('Failed to generate JSON. Please try again.');
+                
+                // Reset button
+                const generateBtn = document.getElementById('generateBtn');
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = '<span>🎯</span> Generate Bricks JSON';
             }
+        }
+
+        async function fetchSectionData(section) {
+            try {
+                // Map section names to actual filenames in the repository
+                const filename = mapSectionNameToFilename(section.name, section.category);
+                const categoryFolder = mapCategoryToFolder(section.category);
+                
+                // Construct GitHub raw URL
+                const url = `https://raw.githubusercontent.com/ZMDx4/brixies-sections-data-cf/main/sections/${categoryFolder}/${filename}.json`;
+                
+                console.log(`Fetching: ${url}`);
+                
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch ${section.name}: ${response.status}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error(`Error fetching section ${section.name}:`, error);
+                showError(`Failed to fetch section "${section.name}". Please check if the section exists in the repository.`);
+                return null;
+            }
+        }
+
+        function mapSectionNameToFilename(sectionName, category) {
+            // Convert section name to the actual filename format used in the repository
+            let filename = sectionName.toLowerCase()
+                .replace(/\s+/g, '-')
+                .replace(/[^a-z0-9-]/g, '');
+            
+            // Add category-specific prefixes if needed
+            switch (category.toLowerCase()) {
+                case 'header':
+                    if (!filename.startsWith('header-')) {
+                        filename = `header-${filename}`;
+                    }
+                    break;
+                case 'hero':
+                    if (!filename.startsWith('hero-')) {
+                        filename = `hero-${filename}`;
+                    }
+                    break;
+                case 'feature':
+                    if (!filename.startsWith('feature-')) {
+                        filename = `feature-${filename}`;
+                    }
+                    break;
+                case 'portfolio':
+                    if (!filename.startsWith('portfolio-')) {
+                        filename = `portfolio-${filename}`;
+                    }
+                    break;
+                case 'cta':
+                    if (!filename.startsWith('cta-')) {
+                        filename = `cta-${filename}`;
+                    }
+                    break;
+                case 'footer':
+                    if (!filename.startsWith('footer-')) {
+                        filename = `footer-${filename}`;
+                    }
+                    break;
+                case 'testimonial':
+                    if (!filename.startsWith('testimonial-')) {
+                        filename = `testimonial-${filename}`;
+                    }
+                    break;
+                case 'pricing':
+                    if (!filename.startsWith('pricing-')) {
+                        filename = `pricing-${filename}`;
+                    }
+                    break;
+                case 'contact':
+                    if (!filename.startsWith('contact-')) {
+                        filename = `contact-${filename}`;
+                    }
+                    break;
+                case 'about':
+                    if (!filename.startsWith('about-')) {
+                        filename = `about-${filename}`;
+                    }
+                    break;
+            }
+            
+            return filename;
+        }
+
+        function mapCategoryToFolder(category) {
+            // Map category names to actual folder names in the repository
+            const categoryMap = {
+                'header': 'headers',
+                'hero': 'heroes',
+                'feature': 'features',
+                'portfolio': 'portfolios',
+                'cta': 'ctas',
+                'footer': 'footers',
+                'testimonial': 'testimonials',
+                'pricing': 'pricing',
+                'contact': 'contacts',
+                'about': 'abouts',
+                'blog sections': 'blogs',
+                'content': 'content',
+                'gallery': 'galleries',
+                'faq': 'faqs',
+                'event': 'events',
+                'logo': 'logos',
+                'megamenu': 'megamenus',
+                'offcanvas': 'offcanvas',
+                'popup': 'popups',
+                'single portfolio': 'single-portfolios',
+                'single post': 'single-posts',
+                'single product': 'single-products',
+                'product': 'products',
+                'team': 'teams',
+                'timeline': 'timelines',
+                'banner section': 'banners',
+                'cart page': 'cart-pages',
+                'checkout page': 'checkout-pages',
+                'coming soon': 'coming-soon',
+                'dashboard page': 'dashboard-pages',
+                'error page': 'error-pages',
+                'link page': 'link-pages',
+                'login page': 'login-pages',
+                'category filter': 'category-filters'
+            };
+            
+            return categoryMap[category.toLowerCase()] || category.toLowerCase().replace(/\s+/g, '-');
+        }
+
+        function replaceCSSClasses(sectionData, newClassName) {
+            // Deep clone the section data
+            const updatedData = JSON.parse(JSON.stringify(sectionData));
+            
+            // Function to recursively replace CSS classes in the data
+            function replaceClasses(obj) {
+                if (typeof obj === 'object' && obj !== null) {
+                    for (const key in obj) {
+                        if (typeof obj[key] === 'string') {
+                            // Replace CSS classes in string values
+                            if (key === 'cssClasses' || key === 'className' || key === 'class') {
+                                obj[key] = newClassName;
+                            } else if (key === 'content' && typeof obj[key] === 'string') {
+                                // Replace CSS classes in content strings
+                                obj[key] = obj[key].replace(/class="[^"]*"/g, `class="${newClassName}"`);
+                                obj[key] = obj[key].replace(/class='[^']*'/g, `class='${newClassName}'`);
+                            }
+                        } else if (typeof obj[key] === 'object') {
+                            replaceClasses(obj[key]);
+                        }
+                    }
+                } else if (Array.isArray(obj)) {
+                    obj.forEach(item => replaceClasses(item));
+                }
+            }
+            
+            replaceClasses(updatedData);
+            return updatedData;
         }
 
         function setupCopyButton() {
