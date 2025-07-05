@@ -147,8 +147,52 @@
             color: #718096;
         }
 
-        .paste-input {
-            display: none;
+        .paste-textarea {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 14px;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+            background: white;
+            resize: vertical;
+            transition: all 0.2s ease;
+            line-height: 1.5;
+        }
+
+        .paste-textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .process-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 16px;
+            width: 100%;
+        }
+
+        .process-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .process-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
         }
 
         .sections-container {
@@ -454,9 +498,22 @@
                 
                 <div class="paste-area" id="pasteArea">
                     <div class="paste-icon">📋</div>
-                    <div class="paste-text">Click here or paste your export data</div>
-                    <div class="paste-subtext">Paste the JSON data copied from the Figma plugin</div>
-                    <input type="text" class="paste-input" id="pasteInput" placeholder="Paste your export data here...">
+                    <div class="paste-text">Paste your export data below</div>
+                    <div class="paste-subtext">Copy the JSON data from the Figma plugin and paste it in the text area</div>
+                    
+                    <div style="margin-top: 20px; width: 100%;">
+                        <textarea 
+                            id="pasteInput" 
+                            class="paste-textarea" 
+                            placeholder="Paste your export JSON data here..."
+                            rows="8"
+                        ></textarea>
+                    </div>
+                    
+                    <button class="process-btn" id="processBtn" disabled>
+                        <span>🚀</span>
+                        Process Export Data
+                    </button>
                 </div>
             </div>
 
@@ -518,22 +575,33 @@
         });
 
         function setupPasteArea() {
-            const pasteArea = document.getElementById('pasteArea');
             const pasteInput = document.getElementById('pasteInput');
+            const processBtn = document.getElementById('processBtn');
 
-            // Click to focus input
-            pasteArea.addEventListener('click', () => {
-                pasteInput.focus();
+            // Handle textarea input to enable/disable process button
+            pasteInput.addEventListener('input', (e) => {
+                const hasContent = e.target.value.trim().length > 0;
+                processBtn.disabled = !hasContent;
             });
 
-            // Handle paste events
-            pasteArea.addEventListener('paste', (e) => {
-                e.preventDefault();
-                const text = e.clipboardData.getData('text');
-                handlePasteData(text);
+            // Handle process button click
+            processBtn.addEventListener('click', () => {
+                const data = pasteInput.value.trim();
+                if (data) {
+                    handlePasteData(data);
+                }
+            });
+
+            // Handle Enter key in textarea
+            pasteInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && e.ctrlKey) {
+                    e.preventDefault();
+                    processBtn.click();
+                }
             });
 
             // Handle drag and drop
+            const pasteArea = document.getElementById('pasteArea');
             pasteArea.addEventListener('dragover', (e) => {
                 e.preventDefault();
                 pasteArea.classList.add('dragover');
@@ -552,15 +620,11 @@
                     const file = files[0];
                     const reader = new FileReader();
                     reader.onload = (e) => {
-                        handlePasteData(e.target.result);
+                        pasteInput.value = e.target.result;
+                        processBtn.disabled = false;
                     };
                     reader.readAsText(file);
                 }
-            });
-
-            // Handle input changes
-            pasteInput.addEventListener('input', (e) => {
-                handlePasteData(e.target.value);
             });
         }
 
@@ -811,4 +875,4 @@
         }
     </script>
 </body>
-</html>
+</html> 
