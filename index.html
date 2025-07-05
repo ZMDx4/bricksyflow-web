@@ -791,17 +791,10 @@
                     generateBtn.innerHTML = `<span>⏳</span> Processing ${i + 1}/${sections.length} sections...`;
                 }
 
-                // Create the final export structure
-                const finalExport = {
-                    exportId: exportData.exportId,
-                    timestamp: new Date().toISOString(),
-                    sections: combinedSections,
-                    totalSections: sections.length,
-                    generatedAt: new Date().toISOString(),
-                    version: '1.0.0'
-                };
+                // Create the final export - just the section data array
+                const finalExport = combinedSections;
 
-                // Display the JSON
+                // Display the JSON - each section as a separate object in the array
                 const outputJson = document.getElementById('outputJson');
                 outputJson.textContent = JSON.stringify(finalExport, null, 2);
                 
@@ -836,6 +829,7 @@
                 const url = `https://raw.githubusercontent.com/ZMDx4/brixies-sections-data-cf/main/sections/${categoryFolder}/${filename}.json`;
                 
                 console.log(`Fetching: ${url}`);
+                console.log(`Section: ${section.name}, Category: ${section.category}, Custom Class: ${section.customClass || section.suggestedClass}`);
                 
                 const response = await fetch(url);
                 if (!response.ok) {
@@ -981,7 +975,29 @@
                 }
             }
             
+            // Replace CSS classes in the main structure
             replaceClasses(updatedData);
+            
+            // Replace CSS classes in globalClasses array
+            if (updatedData.globalClasses && Array.isArray(updatedData.globalClasses)) {
+                updatedData.globalClasses.forEach(globalClass => {
+                    if (globalClass.name) {
+                        // Replace the class name with the new one
+                        globalClass.name = newClassName;
+                    }
+                });
+            }
+            
+            // Replace CSS classes in content array
+            if (updatedData.content && Array.isArray(updatedData.content)) {
+                updatedData.content.forEach(item => {
+                    if (item.settings && item.settings._cssGlobalClasses) {
+                        // Replace the CSS class reference
+                        item.settings._cssGlobalClasses = [newClassName];
+                    }
+                });
+            }
+            
             return updatedData;
         }
 
