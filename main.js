@@ -603,3 +603,36 @@ function showSuccess(message) {
     // For now, just log success messages
     console.log('Success:', message);
 }
+
+// Helper: Map class names to IDs in globalClasses
+function mapCssGlobalClassesToIds(content, globalClasses) {
+    const nameToId = {};
+    globalClasses.forEach(cls => {
+        if (cls.name) nameToId[cls.name] = cls.id;
+    });
+    function remap(node) {
+        if (node && typeof node === 'object') {
+            if (node.settings && Array.isArray(node.settings._cssGlobalClasses)) {
+                node.settings._cssGlobalClasses = node.settings._cssGlobalClasses
+                    .map(name => nameToId[name] || name)
+                    .filter(Boolean);
+            }
+            if (Array.isArray(node.children)) {
+                node.children.forEach(childId => {}); // No-op, handled by recursion
+            }
+            for (const key in node) {
+                if (typeof node[key] === 'object' && node[key] !== null) {
+                    remap(node[key]);
+                }
+            }
+        }
+    }
+    content.forEach(remap);
+}
+
+// In your export logic, after merging allContent and allGlobalClasses:
+// mapCssGlobalClassesToIds(allContent, allGlobalClasses);
+// ... existing code ...
+// In generateBricksJSON, after merging allContent and allGlobalClasses, before output:
+mapCssGlobalClassesToIds(allContent, allGlobalClasses);
+// ... existing code ...
