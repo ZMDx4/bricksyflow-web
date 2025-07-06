@@ -169,7 +169,7 @@ function showSections() {
         // Update all class names
         sections.forEach((section, idx) => {
             if (section.defaultClass) {
-                section.customClass = classPrefix ? `${classPrefix}-${section.defaultClass.replace(/^[^-]+-/, '')}` : section.defaultClass;
+                section.customClass = classPrefix || section.defaultClass;
                 document.querySelectorAll('.input-field')[idx].value = section.customClass;
             }
         });
@@ -305,7 +305,7 @@ async function generateBricksJSON() {
             
             if (sectionData) {
                 // Replace CSS classes in the section data
-                const updatedSectionData = replaceCSSClasses(sectionData, section.customClass || section.suggestedClass);
+                const updatedSectionData = replaceCSSClasses(sectionData, section.customClass || section.defaultClass);
                 combinedSections.push(updatedSectionData);
             }
             
@@ -469,6 +469,42 @@ function replaceCSSClasses(sectionData, newClassName) {
     // Deep clone the section data
     const updatedData = JSON.parse(JSON.stringify(sectionData));
     
+    // Find the original base class from the section data
+    let originalBaseClass = null;
+    if (sectionData.globalClasses && sectionData.globalClasses.length > 0) {
+        // Get the first class name and extract the base class
+        const firstClassName = sectionData.globalClasses[0].name;
+        const match = firstClassName.match(/^([a-zA-Z0-9-]+)/);
+        originalBaseClass = match ? match[1] : firstClassName;
+    }
+    
+    if (!originalBaseClass) {
+        console.warn('Could not find original base class, using default');
+        originalBaseClass = 'feature-17'; // fallback
+    }
+    
+    // Extract the new base class name
+    const newBaseClass = newClassName;
+    
+    console.log(`Replacing base class: ${originalBaseClass} -> ${newBaseClass}`);
+    console.log('Example transformations:');
+    console.log(`  ${originalBaseClass} -> ${newBaseClass}`);
+    console.log(`  ${originalBaseClass}__container -> ${newBaseClass}__container`);
+    console.log(`  ${originalBaseClass}__arrow-left -> ${newBaseClass}__arrow-left`);
+    
+    // Function to replace class names while preserving BEM structure
+    function replaceClassName(className) {
+        if (!className || typeof className !== 'string') return className;
+        
+        // If the class starts with the original base class, replace it
+        if (className.startsWith(originalBaseClass)) {
+            const suffix = className.substring(originalBaseClass.length);
+            return newBaseClass + suffix;
+        }
+        
+        return className;
+    }
+    
     // Function to recursively replace CSS classes in the data
     function replaceClasses(obj) {
         if (typeof obj === 'object' && obj !== null) {
@@ -476,11 +512,17 @@ function replaceCSSClasses(sectionData, newClassName) {
                 if (typeof obj[key] === 'string') {
                     // Replace CSS classes in string values
                     if (key === 'cssClasses' || key === 'className' || key === 'class') {
-                        obj[key] = newClassName;
+                        obj[key] = replaceClassName(obj[key]);
                     } else if (key === 'content' && typeof obj[key] === 'string') {
                         // Replace CSS classes in content strings
-                        obj[key] = obj[key].replace(/class="[^"]*"/g, `class="${newClassName}"`);
-                        obj[key] = obj[key].replace(/class='[^']*'/g, `class='${newClassName}'`);
+                        obj[key] = obj[key].replace(/class="([^"]*)"/g, (match, classNames) => {
+                            const newClassNames = classNames.split(' ').map(cls => replaceClassName(cls)).join(' ');
+                            return `class="${newClassNames}"`;
+                        });
+                        obj[key] = obj[key].replace(/class='([^']*)'/g, (match, classNames) => {
+                            const newClassNames = classNames.split(' ').map(cls => replaceClassName(cls)).join(' ');
+                            return `class='${newClassNames}'`;
+                        });
                     }
                 } else if (typeof obj[key] === 'object') {
                     replaceClasses(obj[key]);
@@ -498,8 +540,7 @@ function replaceCSSClasses(sectionData, newClassName) {
     if (updatedData.globalClasses && Array.isArray(updatedData.globalClasses)) {
         updatedData.globalClasses.forEach(globalClass => {
             if (globalClass.name) {
-                // Replace the class name with the new one
-                globalClass.name = newClassName;
+                globalClass.name = replaceClassName(globalClass.name);
             }
         });
     }
@@ -508,8 +549,20 @@ function replaceCSSClasses(sectionData, newClassName) {
     if (updatedData.content && Array.isArray(updatedData.content)) {
         updatedData.content.forEach(item => {
             if (item.settings && item.settings._cssGlobalClasses) {
-                // Replace the CSS class reference
-                item.settings._cssGlobalClasses = [newClassName];
+                item.settings._cssGlobalClasses = item.settings._cssGlobalClasses.map(cls => replaceClassName(cls));
+            }
+        });
+    }
+    
+    // Update JavaScript code if it contains class references
+    if (updatedData.content) {
+        updatedData.content.forEach(item => {
+            if (item.settings && item.settings.javascriptCode) {
+                // Replace class references in JavaScript code
+                item.settings.javascriptCode = item.settings.javascriptCode.replace(
+                    new RegExp(`\\.${originalBaseClass.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g'),
+                    `.${newBaseClass}`
+                );
             }
         });
     }
