@@ -109,6 +109,22 @@ async function loadMetadataIndex() {
     return metadataIndex;
 }
 
+function findLocalSection(sectionName) {
+    // Map section names to local file paths
+    const sectionMap = {
+        'Intro Section 1': { category: 'Intro', defaultClass: 'intro-1', localPath: 'src/sections/intro/Intro Section 1.json' },
+        'Intro Section 2': { category: 'Intro', defaultClass: 'intro-2', localPath: 'src/sections/intro/Intro Section 2.json' },
+        'Intro Section 3': { category: 'Intro', defaultClass: 'intro-3', localPath: 'src/sections/intro/Intro Section 3.json' },
+        'Intro Section 4': { category: 'Intro', defaultClass: 'intro-4', localPath: 'src/sections/intro/Intro Section 4.json' },
+        'Intro Section 5': { category: 'Intro', defaultClass: 'intro-5', localPath: 'src/sections/intro/Intro Section 5.json' },
+        'Intro Section 6': { category: 'Intro', defaultClass: 'intro-6', localPath: 'src/sections/intro/Intro Section 6.json' },
+        'Intro Section 7': { category: 'Intro', defaultClass: 'intro-7', localPath: 'src/sections/intro/Intro Section 7.json' },
+        'Intro Section 8': { category: 'Intro', defaultClass: 'intro-8', localPath: 'src/sections/intro/Intro Section 8.json' }
+    };
+    
+    return sectionMap[sectionName] || null;
+}
+
 function handlePasteData(data) {
     clearErrors();
     // Accept either JSON array or newline-separated list
@@ -141,7 +157,21 @@ function handlePasteData(data) {
                     };
                 }
             }
-            addError(1, `Section "${name}" not found in metadata index.`);
+            
+            // If not found in metadata, try to find it in local database
+            const localSection = findLocalSection(name);
+            if (localSection) {
+                return {
+                    name,
+                    category: localSection.category,
+                    defaultClass: localSection.defaultClass,
+                    customClass: '',
+                    remoteUrl: localSection.localPath,
+                    originalClass: '' // will be set after fetch
+                };
+            }
+            
+            addError(1, `Section "${name}" not found in metadata index or local database.`);
             return {
                 name,
                 category: '',
@@ -155,12 +185,20 @@ function handlePasteData(data) {
         await Promise.all(sections.map(async (section) => {
             if (section.remoteUrl) {
                 try {
-                    const resp = await fetch(section.remoteUrl);
-                    if (resp.ok) {
-                        const data = await resp.json();
-                        if (data.globalClasses && data.globalClasses.length > 0) {
-                            const match = data.globalClasses[0].name.match(/^([a-zA-Z0-9-]+)/);
-                            section.originalClass = match ? match[1] : data.globalClasses[0].name;
+                    let data;
+                    // Check if it's a local file
+                    if (section.remoteUrl.startsWith('src/')) {
+                        // For local files, we'll load them in fetchSectionData
+                        section.originalClass = section.defaultClass || '';
+                    } else {
+                        // Remote URL
+                        const resp = await fetch(section.remoteUrl);
+                        if (resp.ok) {
+                            data = await resp.json();
+                            if (data.globalClasses && data.globalClasses.length > 0) {
+                                const match = data.globalClasses[0].name.match(/^([a-zA-Z0-9-]+)/);
+                                section.originalClass = match ? match[1] : data.globalClasses[0].name;
+                            }
                         }
                     }
                 } catch (e) {
@@ -215,21 +253,43 @@ function createSectionCard(section, index) {
 
 function getCategoryIcon(category) {
     const icons = {
-        'Header': '📋',
-        'Hero': '⭐',
-        'Portfolio': '🎨',
-        'Contact': '📞',
-        'About': 'ℹ️',
-        'Testimonial': '💬',
-        'Pricing': '💰',
-        'Footer': '🔗',
-        'Feature': '✨',
-        'CTA': '🎯',
-        'Banner Section': '🎪',
-        'Blog Sections': '📝',
-        'Other': '📄'
+        'banner': '🎪',
+        'blog': '📝',
+        'cart': '🛒',
+        'category-filters': '🔎',
+        'checkout': '💳',
+        'coming-soon': '⏳',
+        'content': '📄',
+        'cta': '🎯',
+        'dashboard': '📊',
+        'error': '❌',
+        'event': '🎫',
+        'faq': '❓',
+        'feature': '✨',
+        'footer': '🔗',
+        'gallery': '🖼️',
+        'headers': '📋',
+        'hero': '⭐',
+        'intro': '🚀',
+        'link': '🔗',
+        'login': '🔐',
+        'logo': '🖍️',
+        'megamenu': '📚',
+        'offcanvas': '🧾',
+        'popup': '💬',
+        'portfolio': '🎨',
+        'pricing': '💰',
+        'products': '📦',
+        'single-portfolio': '🎭',
+        'single-post': '📰',
+        'single-post-hero': '🏆',
+        'single-product': '🛍️',
+        'team': '👥',
+        'testimonial': '💬',
+        'timeline': '⏱️',
     };
-    return icons[category] || '📄';
+    // Try both original and lowercased category
+    return icons[category] || icons[category && category.toLowerCase()] || '📄';
 }
 
 function updateSectionClass(index, className) {
@@ -376,14 +436,36 @@ async function fetchSectionData(section) {
         if (!section.remoteUrl) {
             throw new Error(`No remoteUrl for section: ${section.name}`);
         }
-        const url = section.remoteUrl;
-        console.log(`Fetching: ${url}`);
-        console.log(`Section: ${section.name}, Category: ${section.category}, Custom Class: ${section.customClass || section.suggestedClass}`);
-        const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error(`Failed to fetch ${section.name}: ${response.status}`);
+        
+        let data;
+        
+        // Check if it's a local file
+        if (section.remoteUrl.startsWith('src/')) {
+            console.log(`Loading local file: ${section.remoteUrl}`);
+            console.log(`Section: ${section.name}, Category: ${section.category}, Custom Class: ${section.customClass || section.suggestedClass}`);
+            
+            // For local files, we need to load them differently
+            // Since we can't use fetch for local files in a web context,
+            // we'll need to include the data in the page or use a different approach
+            // For now, let's try to fetch with a relative path
+            const response = await fetch(section.remoteUrl);
+            if (!response.ok) {
+                throw new Error(`Failed to load local file ${section.name}: ${response.status}`);
+            }
+            data = await response.json();
+        } else {
+            // Remote URL
+            const url = section.remoteUrl;
+            console.log(`Fetching: ${url}`);
+            console.log(`Section: ${section.name}, Category: ${section.category}, Custom Class: ${section.customClass || section.suggestedClass}`);
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch ${section.name}: ${response.status}`);
+            }
+            data = await response.json();
         }
-        return await response.json();
+        
+        return data;
     } catch (error) {
         console.error(`Error fetching section ${section.name}:`, error);
         addError(2, `Failed to fetch section "${section.name}": ${error.message}`);
@@ -760,3 +842,4 @@ function semanticRenameAndRemap(content, globalClasses, prefix) {
     content.forEach(remap);
     return { content, globalClasses: newGlobalClasses };
 }
+
