@@ -469,6 +469,16 @@ function replaceCSSClasses(sectionData, newClassName) {
     // Deep clone the section data
     const updatedData = JSON.parse(JSON.stringify(sectionData));
     
+    // Generate unique ID for a class name
+    function generateUniqueId(className) {
+        let hash = 0;
+        for (let i = 0; i < className.length; i++) {
+            hash = ((hash << 5) - hash) + className.charCodeAt(i);
+            hash |= 0;
+        }
+        return Math.abs(hash).toString(36).slice(0, 6);
+    }
+    
     // Find the original base class from the section data
     let originalBaseClass = null;
     if (sectionData.globalClasses && sectionData.globalClasses.length > 0) {
@@ -494,6 +504,7 @@ function replaceCSSClasses(sectionData, newClassName) {
     console.log(`  card-${originalBaseClass} -> card-${newBaseClass}`);
     console.log(`  card-${originalBaseClass}__img -> card-${newBaseClass}__img`);
     console.log(`  [any-prefix]-${originalBaseClass} -> [any-prefix]-${newBaseClass}`);
+    console.log('Generating new unique IDs for all classes...');
     
     // Function to replace class names while preserving BEM structure
     function replaceClassName(className) {
@@ -547,20 +558,36 @@ function replaceCSSClasses(sectionData, newClassName) {
     // Replace CSS classes in the main structure
     replaceClasses(updatedData);
     
-    // Replace CSS classes in globalClasses array
+    // Create mapping from old IDs to new IDs
+    const idMapping = {};
+    
+    // Replace CSS classes in globalClasses array and generate new IDs
     if (updatedData.globalClasses && Array.isArray(updatedData.globalClasses)) {
         updatedData.globalClasses.forEach(globalClass => {
             if (globalClass.name) {
-                globalClass.name = replaceClassName(globalClass.name);
+                const oldId = globalClass.id;
+                const oldName = globalClass.name;
+                const newName = replaceClassName(globalClass.name);
+                globalClass.name = newName;
+                
+                // Generate a new unique ID for the class
+                const newId = generateUniqueId(newName);
+                globalClass.id = newId;
+                
+                // Store the mapping
+                idMapping[oldId] = newId;
             }
         });
     }
     
-    // Replace CSS classes in content array
+    // Replace CSS classes in content array and update IDs
     if (updatedData.content && Array.isArray(updatedData.content)) {
         updatedData.content.forEach(item => {
             if (item.settings && item.settings._cssGlobalClasses) {
-                item.settings._cssGlobalClasses = item.settings._cssGlobalClasses.map(cls => replaceClassName(cls));
+                item.settings._cssGlobalClasses = item.settings._cssGlobalClasses.map(oldId => {
+                    // Map the old ID to the new ID
+                    return idMapping[oldId] || oldId;
+                });
             }
         });
     }
