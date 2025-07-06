@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-// Function to generate local metadata index from the src/cf/ directory structure
+// Function to generate local metadata index from the sections/cf/ directory structure
 function generateLocalMetadataIndex() {
   const metadataIndex = {
     frameworks: {
@@ -10,10 +10,10 @@ function generateLocalMetadataIndex() {
     lastUpdated: new Date().toISOString()
   };
 
-  const cfDir = path.join(__dirname, 'src', 'cf');
+  const cfDir = path.join(__dirname, 'sections', 'cf');
   
   if (!fs.existsSync(cfDir)) {
-    console.error('src/cf/ directory not found. Please ensure it exists.');
+    console.error('sections/cf/ directory not found. Please ensure it exists.');
     return;
   }
 
@@ -34,7 +34,7 @@ function generateLocalMetadataIndex() {
       metadataIndex.frameworks.cf[category] = {};
 
       for (const fileName of files) {
-        const relativePath = `src/cf/${category}/${fileName}.json`;
+        const relativePath = `sections/cf/${category}/${fileName}.json`;
         
         metadataIndex.frameworks.cf[category][fileName] = {
           id: fileName.toLowerCase().replace(/\s+/g, '-'),
