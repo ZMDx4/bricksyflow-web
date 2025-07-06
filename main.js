@@ -734,16 +734,3 @@ function semanticRenameAndRemap(content, globalClasses, prefix) {
     return { content, globalClasses: newGlobalClasses };
 }
 
-// In generateBricksJSON, after merging allContent and allGlobalClasses, before output:
-const prefix = classPrefix || (sections[0] && sections[0].customClass ? extractRoot(sections[0].customClass) : 'brixies-section');
-const renamed = semanticRenameAndRemap(allContent, allGlobalClasses, prefix);
-// Use renamed.content and renamed.globalClasses in the final export
-const finalExport = {
-    content: renamed.content,
-    globalClasses: renamed.globalClasses,
-    globalElements: allGlobalElements
-};
-document.getElementById('outputJson').textContent = JSON.stringify(finalExport, null, 2);
-goToStep(3);
-generateBtn.disabled = false;
-generateBtn.innerHTML = '<span>🎯</span> Generate Bricks JSON';
