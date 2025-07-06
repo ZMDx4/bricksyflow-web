@@ -491,6 +491,9 @@ function replaceCSSClasses(sectionData, newClassName) {
     console.log(`  ${originalBaseClass} -> ${newBaseClass}`);
     console.log(`  ${originalBaseClass}__container -> ${newBaseClass}__container`);
     console.log(`  ${originalBaseClass}__arrow-left -> ${newBaseClass}__arrow-left`);
+    console.log(`  card-${originalBaseClass} -> card-${newBaseClass}`);
+    console.log(`  card-${originalBaseClass}__img -> card-${newBaseClass}__img`);
+    console.log(`  [any-prefix]-${originalBaseClass} -> [any-prefix]-${newBaseClass}`);
     
     // Function to replace class names while preserving BEM structure
     function replaceClassName(className) {
@@ -500,6 +503,14 @@ function replaceCSSClasses(sectionData, newClassName) {
         if (className.startsWith(originalBaseClass)) {
             const suffix = className.substring(originalBaseClass.length);
             return newBaseClass + suffix;
+        }
+        
+        // Handle prefixed classes (e.g., card-feature-17 -> card-prozy-features-section)
+        const prefixMatch = className.match(new RegExp(`^([a-zA-Z]+)-${originalBaseClass.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`));
+        if (prefixMatch) {
+            const prefix = prefixMatch[1];
+            const suffix = className.substring(prefixMatch[0].length);
+            return `${prefix}-${newBaseClass}${suffix}`;
         }
         
         return className;
@@ -560,6 +571,14 @@ function replaceCSSClasses(sectionData, newClassName) {
             if (item.settings && item.settings.javascriptCode) {
                 // Replace class references in JavaScript code
                 item.settings.javascriptCode = item.settings.javascriptCode.replace(
+                    new RegExp(`\\.${originalBaseClass.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g'),
+                    `.${newBaseClass}`
+                );
+            }
+            
+            // Update CSS custom code if it contains class references
+            if (item.settings && item.settings._cssCustom) {
+                item.settings._cssCustom = item.settings._cssCustom.replace(
                     new RegExp(`\\.${originalBaseClass.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g'),
                     `.${newBaseClass}`
                 );
