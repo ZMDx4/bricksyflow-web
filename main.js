@@ -359,8 +359,33 @@ async function generateBricksJSON() {
         const jsonString = JSON.stringify(output, null, 2);
         console.log('Generated JSON length:', jsonString.length);
         console.log('Global classes count:', output.globalClasses ? output.globalClasses.length : 0);
+        
+        // Debug: Check the structure of the first few global classes
+        if (output.globalClasses && output.globalClasses.length > 0) {
+            console.log('First global class structure:', JSON.stringify(output.globalClasses[0], null, 2));
+            console.log('Global classes with settings:', output.globalClasses.filter(cls => cls.settings).length);
+            console.log('Global classes without settings:', output.globalClasses.filter(cls => !cls.settings).length);
+        }
+        
         outputJson.textContent = jsonString;
         document.getElementById('outputSection').style.display = 'block';
+        
+        // Add download functionality
+        const downloadBtn = document.getElementById('downloadJson');
+        if (downloadBtn) {
+            downloadBtn.onclick = () => {
+                const blob = new Blob([jsonString], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'bricks-export.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            };
+            downloadBtn.style.display = 'inline-block';
+        }
         generateBtn.disabled = false;
         generateBtn.innerHTML = '<span>🎯</span> Generate Bricks JSON';
         goToStep(3);
