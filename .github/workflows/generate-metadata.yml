@@ -1,0 +1,33 @@
+name: Generate Metadata Index
+
+on:
+  schedule:
+    # Runs at 6am, 12pm, 6pm, and 12am UTC every day
+    - cron: '0 6,12,18,0 * * *'
+  workflow_dispatch: # Allow manual runs
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Generate metadata index
+        run: node generate-metadata-index.js
+
+      - name: Commit and push if changed
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add local-metadata-index.json
+          git diff --cached --quiet || git commit -m "Auto-update metadata index"
+          git push
