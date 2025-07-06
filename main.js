@@ -146,8 +146,9 @@ function handlePasteData(data) {
         await Promise.all(sections.map(async (section) => {
             if (section.relativePath) {
                 try {
-                    // Convert relative path to raw GitHub URL
-                    const rawUrl = `https://raw.githubusercontent.com/ZMDx4/brixies-exporter-web/main/${section.relativePath}`;
+                    // Decode the relative path to handle any URL encoding, then build the raw GitHub URL
+                    const decodedPath = decodeURIComponent(section.relativePath);
+                    const rawUrl = `https://raw.githubusercontent.com/ZMDx4/brixies-exporter-web/main/${decodedPath}`;
                     const resp = await fetch(rawUrl);
                     if (resp.ok) {
                         const data = await resp.json();
@@ -364,8 +365,9 @@ async function fetchSectionData(section) {
         if (!section.relativePath) {
             throw new Error(`No relativePath for section: ${section.name}`);
         }
-        // Convert relative path to raw GitHub URL
-        const rawUrl = `https://raw.githubusercontent.com/ZMDx4/brixies-exporter-web/main/${section.relativePath}`;
+        // Decode the relative path to handle any URL encoding, then build the raw GitHub URL
+        const decodedPath = decodeURIComponent(section.relativePath);
+        const rawUrl = `https://raw.githubusercontent.com/ZMDx4/brixies-exporter-web/main/${decodedPath}`;
         console.log(`Fetching: ${rawUrl}`);
         console.log(`Section: ${section.name}, Category: ${section.category}, Custom Class: ${section.customClass || section.suggestedClass}`);
         const response = await fetch(rawUrl);
