@@ -362,12 +362,7 @@ async function fetchSectionData(section) {
         if (!section.relativePath) {
             throw new Error(`No relativePath for section: ${section.name}`);
         }
-        // Encode only the filename part, not the entire path
-        const encodedPath = section.relativePath
-            .split('/')
-            .map((part, i, arr) => (i === arr.length - 1 ? encodeURIComponent(part) : part))
-            .join('/');
-        const response = await fetch(encodedPath);
+        const response = await fetch(section.relativePath);
         if (!response.ok) {
             throw new Error(`Failed to fetch ${section.name}: ${response.status}`);
         }
