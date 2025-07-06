@@ -146,7 +146,9 @@ function handlePasteData(data) {
         await Promise.all(sections.map(async (section) => {
             if (section.relativePath) {
                 try {
-                    const resp = await fetch(section.relativePath);
+                    // Convert relative path to raw GitHub URL
+                    const rawUrl = `https://raw.githubusercontent.com/ZMDx4/brixies-exporter-web/main/${section.relativePath}`;
+                    const resp = await fetch(rawUrl);
                     if (resp.ok) {
                         const data = await resp.json();
                         if (data.globalClasses && data.globalClasses.length > 0) {
@@ -362,7 +364,11 @@ async function fetchSectionData(section) {
         if (!section.relativePath) {
             throw new Error(`No relativePath for section: ${section.name}`);
         }
-        const response = await fetch(section.relativePath);
+        // Convert relative path to raw GitHub URL
+        const rawUrl = `https://raw.githubusercontent.com/ZMDx4/brixies-exporter-web/main/${section.relativePath}`;
+        console.log(`Fetching: ${rawUrl}`);
+        console.log(`Section: ${section.name}, Category: ${section.category}, Custom Class: ${section.customClass || section.suggestedClass}`);
+        const response = await fetch(rawUrl);
         if (!response.ok) {
             throw new Error(`Failed to fetch ${section.name}: ${response.status}`);
         }
