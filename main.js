@@ -44,6 +44,15 @@ function resetToStep1() {
     errors = [];
     document.getElementById('pasteInput').value = '';
     document.getElementById('processBtn').disabled = true;
+    document.getElementById('sectionsContainer').style.display = 'none';
+    document.getElementById('outputSection').style.display = 'none';
+    document.getElementById('generateBtn').disabled = true;
+    
+    // Re-enable framework selection
+    const frameworkSelect = document.getElementById('frameworkSelect');
+    frameworkSelect.disabled = false;
+    frameworkSelect.parentElement.style.opacity = '1';
+    
     clearErrors();
     goToStep(1);
 }
@@ -164,6 +173,12 @@ function handlePasteData(data) {
                 section.originalClass = section.defaultClass || '';
             }
         }));
+        
+        // Disable framework selection after processing
+        const frameworkSelect = document.getElementById('frameworkSelect');
+        frameworkSelect.disabled = true;
+        frameworkSelect.parentElement.style.opacity = '0.6';
+        
         showSections();
         goToStep(2);
     }).catch(err => {
@@ -522,15 +537,28 @@ function semanticRenameAndRemap(content, globalClasses, prefix) {
 
 function setupCopyButton() {
     document.getElementById('copyBtn').addEventListener('click', () => {
+        const copyBtn = document.getElementById('copyBtn');
+        const originalText = copyBtn.innerHTML;
         const jsonText = document.getElementById('outputJson').textContent;
+        
         if (navigator.clipboard && window.isSecureContext) {
             navigator.clipboard.writeText(jsonText).then(() => {
-                showSuccess('JSON copied to clipboard!');
+                // Change button text to show success
+                copyBtn.innerHTML = '<span>✅</span> JSON Copied!';
+                copyBtn.style.background = '#48bb78';
+                copyBtn.style.cursor = 'default';
+                
+                // Reset button after 2 seconds
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalText;
+                    copyBtn.style.background = '#667eea';
+                    copyBtn.style.cursor = 'pointer';
+                }, 2000);
             }).catch(() => {
-                fallbackCopyTextToClipboard(jsonText);
+                fallbackCopyTextToClipboard(jsonText, copyBtn, originalText);
             });
         } else {
-            fallbackCopyTextToClipboard(jsonText);
+            fallbackCopyTextToClipboard(jsonText, copyBtn, originalText);
         }
     });
 }
@@ -581,7 +609,7 @@ function showSuccess(message) {
     }, 2000);
 }
 
-function fallbackCopyTextToClipboard(text) {
+function fallbackCopyTextToClipboard(text, copyBtn, originalText) {
     const textArea = document.createElement('textarea');
     textArea.value = text;
     document.body.appendChild(textArea);
@@ -589,7 +617,17 @@ function fallbackCopyTextToClipboard(text) {
     textArea.select();
     try {
         document.execCommand('copy');
-        showSuccess('JSON copied to clipboard!');
+        // Change button text to show success
+        copyBtn.innerHTML = '<span>✅</span> JSON Copied!';
+        copyBtn.style.background = '#48bb78';
+        copyBtn.style.cursor = 'default';
+        
+        // Reset button after 2 seconds
+        setTimeout(() => {
+            copyBtn.innerHTML = originalText;
+            copyBtn.style.background = '#667eea';
+            copyBtn.style.cursor = 'pointer';
+        }, 2000);
     } catch (err) {
         alert('Failed to copy JSON');
     }
