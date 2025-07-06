@@ -3,7 +3,6 @@ let exportData = null;
 let sections = [];
 let errors = [];
 let metadataIndex = null;
-let classPrefix = '';
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -160,20 +159,8 @@ function handlePasteData(data) {
 function showSections() {
     document.getElementById('sectionsContainer').style.display = 'block';
     document.getElementById('generateBtn').disabled = false;
-    // Add class prefix input
-    let prefixHtml = `<div style="margin-bottom:24px;"><label style="font-weight:600;">Class Prefix:</label> <input id='classPrefixInput' type='text' value='${classPrefix}' style='margin-left:8px;padding:4px 8px;border-radius:6px;border:1px solid #ccc;font-size:14px;width:120px;'></div>`;
     const grid = document.getElementById('sectionsGrid');
-    grid.innerHTML = prefixHtml + sections.map((section, index) => createSectionCard(section, index)).join('');
-    document.getElementById('classPrefixInput').addEventListener('input', e => {
-        classPrefix = e.target.value;
-        // Update all class names
-        sections.forEach((section, idx) => {
-            if (section.defaultClass) {
-                section.customClass = classPrefix || section.defaultClass;
-                document.querySelectorAll('.input-field')[idx].value = section.customClass;
-            }
-        });
-    });
+    grid.innerHTML = sections.map((section, index) => createSectionCard(section, index)).join('');
     setupDragAndDrop();
 }
 
@@ -191,13 +178,13 @@ function createSectionCard(section, index) {
                 <div class="drag-handle">⋮⋮</div>
             </div>
             <div class="section-input">
-                <label class="input-label">Class Name</label>
+                <label class="input-label">Class Name (Original: ${section.defaultClass})</label>
                 <input 
                     type="text" 
                     class="input-field" 
                     value="${section.customClass || section.defaultClass || ''}"
                     onchange="updateSectionClass(${index}, this.value)"
-                    placeholder="Enter class name..."
+                    placeholder="Enter new class name..."
                 >
             </div>
         </div>
@@ -497,14 +484,6 @@ function replaceCSSClasses(sectionData, newClassName) {
     const newBaseClass = newClassName;
     
     console.log(`Replacing base class: ${originalBaseClass} -> ${newBaseClass}`);
-    console.log('Example transformations:');
-    console.log(`  ${originalBaseClass} -> ${newBaseClass}`);
-    console.log(`  ${originalBaseClass}__container -> ${newBaseClass}__container`);
-    console.log(`  ${originalBaseClass}__arrow-left -> ${newBaseClass}__arrow-left`);
-    console.log(`  card-${originalBaseClass} -> card-${newBaseClass}`);
-    console.log(`  card-${originalBaseClass}__img -> card-${newBaseClass}__img`);
-    console.log(`  [any-prefix]-${originalBaseClass} -> [any-prefix]-${newBaseClass}`);
-    console.log('Generating new unique IDs for all classes...');
     
     // Function to replace class names while preserving BEM structure
     function replaceClassName(className) {
@@ -592,20 +571,35 @@ function replaceCSSClasses(sectionData, newClassName) {
         });
     }
     
-    // Update JavaScript code if it contains class references
+    // Update JavaScript code and CSS custom code if they contain class references
     if (updatedData.content) {
         updatedData.content.forEach(item => {
-            if (item.settings && item.settings.javascriptCode) {
-                // Replace class references in JavaScript code
-                item.settings.javascriptCode = item.settings.javascriptCode.replace(
-                    new RegExp(`\\.${originalBaseClass.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g'),
-                    `.${newBaseClass}`
-                );
+            if (item.settings) {
+                // Update JavaScript code
+                if (item.settings.javascriptCode) {
+                    // Replace class references in JavaScript code
+                    item.settings.javascriptCode = item.settings.javascriptCode.replace(
+                        new RegExp(`\\.${originalBaseClass.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g'),
+                        `.${newBaseClass}`
+                    );
+                }
+                
+                // Update CSS custom code
+                if (item.settings._cssCustom) {
+                    item.settings._cssCustom = item.settings._cssCustom.replace(
+                        new RegExp(`\\.${originalBaseClass.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g'),
+                        `.${newBaseClass}`
+                    );
+                }
             }
-            
-            // Update CSS custom code if it contains class references
-            if (item.settings && item.settings._cssCustom) {
-                item.settings._cssCustom = item.settings._cssCustom.replace(
+        });
+    }
+    
+    // Also update CSS custom code in globalClasses
+    if (updatedData.globalClasses && Array.isArray(updatedData.globalClasses)) {
+        updatedData.globalClasses.forEach(globalClass => {
+            if (globalClass.settings && globalClass.settings._cssCustom) {
+                globalClass.settings._cssCustom = globalClass.settings._cssCustom.replace(
                     new RegExp(`\\.${originalBaseClass.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g'),
                     `.${newBaseClass}`
                 );
