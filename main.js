@@ -471,3 +471,78 @@ function semanticRenameAndRemap(content, globalClasses, prefix) {
     return { content, globalClasses: newGlobalClasses };
 }
 
+function setupCopyButton() {
+    document.getElementById('copyBtn').addEventListener('click', () => {
+        const jsonText = document.getElementById('outputJson').textContent;
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(jsonText).then(() => {
+                showSuccess('JSON copied to clipboard!');
+            }).catch(() => {
+                fallbackCopyTextToClipboard(jsonText);
+            });
+        } else {
+            fallbackCopyTextToClipboard(jsonText);
+        }
+    });
+}
+
+function setupDownloadButton() {
+    document.getElementById('downloadBtn').addEventListener('click', () => {
+        const jsonText = document.getElementById('outputJson').textContent;
+        const blob = new Blob([jsonText], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'bricks-export.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showSuccess('Download started!');
+    });
+}
+
+function clearErrors() {
+    const errorBox = document.getElementById('errorBox');
+    if (errorBox) errorBox.innerHTML = '';
+    errors = [];
+}
+
+function addError(level, message) {
+    errors.push({ level, message });
+    const errorBox = document.getElementById('errorBox');
+    if (errorBox) {
+        const color = level === 1 ? '#e57373' : '#ffb300';
+        const icon = level === 1 ? '❌' : '⚠️';
+        const div = document.createElement('div');
+        div.className = 'error-message';
+        div.style.color = color;
+        div.innerHTML = `${icon} ${message}`;
+        errorBox.appendChild(div);
+    }
+}
+
+function showSuccess(message) {
+    const successBox = document.getElementById('successBox');
+    if (!successBox) return;
+    successBox.textContent = message;
+    successBox.style.display = 'block';
+    setTimeout(() => {
+        successBox.style.display = 'none';
+    }, 2000);
+}
+
+function fallbackCopyTextToClipboard(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+        document.execCommand('copy');
+        showSuccess('JSON copied to clipboard!');
+    } catch (err) {
+        alert('Failed to copy JSON');
+    }
+    document.body.removeChild(textArea);
+}
