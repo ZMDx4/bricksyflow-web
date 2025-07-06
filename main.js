@@ -125,7 +125,7 @@ function handlePasteData(data) {
         return;
     }
     // Load metadata and map names
-    loadMetadataIndex().then(meta => {
+    loadMetadataIndex().then(async meta => {
         sections = sectionNames.map(name => {
             let found = null;
             for (const category in meta.sections) {
@@ -136,7 +136,8 @@ function handlePasteData(data) {
                         category,
                         defaultClass: found.defaultClass,
                         customClass: '',
-                        remoteUrl: found.remoteUrl
+                        remoteUrl: found.remoteUrl,
+                        originalClass: '' // will be set after fetch
                     };
                 }
             }
@@ -146,9 +147,30 @@ function handlePasteData(data) {
                 category: '',
                 defaultClass: '',
                 customClass: '',
-                remoteUrl: ''
+                remoteUrl: '',
+                originalClass: ''
             };
         });
+        // Fetch all section data and set originalClass
+        await Promise.all(sections.map(async (section) => {
+            if (section.remoteUrl) {
+                try {
+                    const resp = await fetch(section.remoteUrl);
+                    if (resp.ok) {
+                        const data = await resp.json();
+                        if (data.globalClasses && data.globalClasses.length > 0) {
+                            const match = data.globalClasses[0].name.match(/^([a-zA-Z0-9-]+)/);
+                            section.originalClass = match ? match[1] : data.globalClasses[0].name;
+                        }
+                    }
+                } catch (e) {
+                    // If fetch fails, fallback to defaultClass
+                    section.originalClass = section.defaultClass || '';
+                }
+            } else {
+                section.originalClass = section.defaultClass || '';
+            }
+        }));
         showSections();
         goToStep(2);
     }).catch(err => {
