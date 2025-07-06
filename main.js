@@ -331,8 +331,30 @@ async function generateBricksJSON() {
             output = combinedSections[0]; // single object for single section
             console.log('Single section - output as object:', output);
         } else {
-            output = combinedSections; // array for multiple sections
-            console.log('Multiple sections - output as array:', output);
+            // For multiple sections, merge them into a single object like Bricks does
+            const mergedOutput = {
+                content: [],
+                globalClasses: [],
+                globalElements: [],
+                source: "bricksCopiedElements",
+                sourceUrl: "https://cf.brixies.co",
+                version: "1.9.9"
+            };
+            
+            combinedSections.forEach(section => {
+                if (section.content) {
+                    mergedOutput.content.push(...section.content);
+                }
+                if (section.globalClasses) {
+                    mergedOutput.globalClasses.push(...section.globalClasses);
+                }
+                if (section.globalElements) {
+                    mergedOutput.globalElements.push(...section.globalElements);
+                }
+            });
+            
+            output = mergedOutput;
+            console.log('Multiple sections - merged into single object:', output);
         }
         const outputJson = document.getElementById('outputJson');
         outputJson.textContent = JSON.stringify(output, null, 2);
@@ -738,4 +760,3 @@ function semanticRenameAndRemap(content, globalClasses, prefix) {
     content.forEach(remap);
     return { content, globalClasses: newGlobalClasses };
 }
-
