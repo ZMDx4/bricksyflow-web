@@ -344,10 +344,13 @@ async function generateBricksJSON() {
                 version: "1.9.9"
             };
             combinedSections.forEach((section, index) => {
-                console.log(`Section ${index + 1}: ${section.globalClasses ? section.globalClasses.length : 0} global classes`);
-                if (section.content) mergedOutput.content.push(...section.content);
-                if (section.globalClasses) mergedOutput.globalClasses.push(...section.globalClasses);
-                if (section.globalElements) mergedOutput.globalElements.push(...section.globalElements);
+                        console.log(`Section ${index + 1}: ${section.globalClasses ? section.globalClasses.length : 0} global classes`);
+        if (section.content) mergedOutput.content.push(...section.content);
+        if (section.globalClasses) {
+            console.log(`Section ${index + 1} global classes with settings:`, section.globalClasses.filter(cls => cls.settings).length);
+            mergedOutput.globalClasses.push(...section.globalClasses);
+        }
+        if (section.globalElements) mergedOutput.globalElements.push(...section.globalElements);
             });
             console.log(`Total merged: ${mergedOutput.globalClasses.length} global classes`);
             output = mergedOutput;
@@ -466,7 +469,7 @@ function semanticRenameAndRemap(content, globalClasses, prefix) {
             id: newNameToId[newName],
             name: newName
         };
-        console.log(`Renamed class: ${cls.name} -> ${newName}, ID: ${cls.id} -> ${newNameToId[newName]}`);
+        console.log(`Renamed class: ${cls.name} -> ${newName}, ID: ${cls.id} -> ${newNameToId[newName]}, has settings: ${!!cls.settings}`);
         return newClass;
     });
     // 5. Remap _cssGlobalClasses in content to new IDs
