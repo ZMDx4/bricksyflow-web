@@ -630,9 +630,20 @@ function mapCssGlobalClassesToIds(content, globalClasses) {
     content.forEach(remap);
 }
 
+// Helper: Extract root from a class name (e.g., 'feature-17' from 'feature-17__arrow-left')
+function extractRoot(className) {
+    const match = className.match(/^([a-zA-Z0-9-]+)/);
+    return match ? match[1] : className;
+}
+
+// Helper: Replace root in a class name with a new prefix
+function replaceRoot(className, newRoot) {
+    const root = extractRoot(className);
+    return className.replace(root, newRoot);
+}
+
 // Helper: Generate a unique ID for a class name
 function generateClassId(className) {
-    // Simple hash or base36 of className for uniqueness
     let hash = 0;
     for (let i = 0; i < className.length; i++) {
         hash = ((hash << 5) - hash) + className.charCodeAt(i);
@@ -641,40 +652,39 @@ function generateClassId(className) {
     return Math.abs(hash).toString(36).slice(0, 6);
 }
 
-// Helper: Update globalClasses and remap _cssGlobalClasses to IDs
-function updateGlobalClassesAndRemap(content, globalClasses, classNameMap) {
-    // Build a map of className -> globalClass
-    const nameToClass = {};
+// Main function to rename classes and update IDs for Bricks export
+function semanticRenameAndRemap(content, globalClasses, prefix) {
+    // 1. Build mapping: old class name -> new class name (with prefix)
+    const classNameMap = {};
     globalClasses.forEach(cls => {
-        if (cls.name) nameToClass[cls.name] = cls;
+        const newName = replaceRoot(cls.name, prefix);
+        classNameMap[cls.name] = newName;
     });
-    // For each className in classNameMap, update or create globalClass
+    // 2. Build mapping: new class name -> new ID
+    const newNameToId = {};
+    Object.values(classNameMap).forEach(newName => {
+        newNameToId[newName] = generateClassId(newName);
+    });
+    // 3. Build mapping: old class name -> new ID
+    const classNameToId = {};
     Object.entries(classNameMap).forEach(([oldName, newName]) => {
-        if (oldName === newName) return;
-        let existing = globalClasses.find(cls => cls.name === newName);
-        if (!existing) {
-            // Find the old class
-            let oldClass = nameToClass[oldName];
-            if (oldClass) {
-                // Clone and update
-                const newId = generateClassId(newName);
-                const newClass = { ...oldClass, id: newId, name: newName };
-                globalClasses.push(newClass);
-                nameToClass[newName] = newClass;
-            }
-        }
+        classNameToId[oldName] = newNameToId[newName];
     });
-    // Build name->id map
-    const nameToId = {};
-    globalClasses.forEach(cls => {
-        if (cls.name) nameToId[cls.name] = cls.id;
+    // 4. Create new globalClasses array with renamed classes and new IDs
+    const newGlobalClasses = globalClasses.map(cls => {
+        const newName = classNameMap[cls.name];
+        return {
+            ...cls,
+            id: newNameToId[newName],
+            name: newName
+        };
     });
-    // Remap _cssGlobalClasses in content
+    // 5. Remap _cssGlobalClasses in content to new IDs
     function remap(node) {
         if (node && typeof node === 'object') {
             if (node.settings && Array.isArray(node.settings._cssGlobalClasses)) {
                 node.settings._cssGlobalClasses = node.settings._cssGlobalClasses
-                    .map(name => nameToId[classNameMap[name] || name] || name)
+                    .map(name => classNameToId[name] || name)
                     .filter(Boolean);
             }
             if (Array.isArray(node.children)) {
@@ -688,14 +698,19 @@ function updateGlobalClassesAndRemap(content, globalClasses, classNameMap) {
         }
     }
     content.forEach(remap);
+    return { content, globalClasses: newGlobalClasses };
 }
 
 // In generateBricksJSON, after merging allContent and allGlobalClasses, before output:
-// Build a classNameMap from original to custom class names
-const classNameMap = {};
-sections.forEach(section => {
-    if (section.defaultClass && section.customClass && section.defaultClass !== section.customClass) {
-        classNameMap[section.defaultClass] = section.customClass;
-    }
-});
-updateGlobalClassesAndRemap(allContent, allGlobalClasses, classNameMap);
+const prefix = classPrefix || (sections[0] && sections[0].customClass ? extractRoot(sections[0].customClass) : 'brixies-section');
+const renamed = semanticRenameAndRemap(allContent, allGlobalClasses, prefix);
+// Use renamed.content and renamed.globalClasses in the final export
+const finalExport = {
+    content: renamed.content,
+    globalClasses: renamed.globalClasses,
+    globalElements: allGlobalElements
+};
+document.getElementById('outputJson').textContent = JSON.stringify(finalExport, null, 2);
+goToStep(3);
+generateBtn.disabled = false;
+generateBtn.innerHTML = '<span>🎯</span> Generate Bricks JSON';
