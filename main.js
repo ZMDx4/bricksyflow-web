@@ -191,13 +191,30 @@ function showSections() {
     document.getElementById('generateBtn').disabled = false;
     const grid = document.getElementById('sectionsGrid');
     grid.innerHTML = sections.map((section, index) => createSectionCard(section, index)).join('');
-    setupDragAndDrop();
 }
 
 function createSectionCard(section, index) {
     const categoryIcon = getCategoryIcon(section.category);
+    const totalSections = sections.length;
+    
+    // Determine which arrows to show
+    let leftArrow = '';
+    let rightArrow = '';
+    
+    if (index === 0) {
+        // First section: only right arrow
+        rightArrow = `<button class="order-btn right-btn" onclick="moveSection(${index}, 'right')" title="Move down">→</button>`;
+    } else if (index === totalSections - 1) {
+        // Last section: only left arrow
+        leftArrow = `<button class="order-btn left-btn" onclick="moveSection(${index}, 'left')" title="Move up">←</button>`;
+    } else {
+        // Middle sections: both arrows
+        leftArrow = `<button class="order-btn left-btn" onclick="moveSection(${index}, 'left')" title="Move up">←</button>`;
+        rightArrow = `<button class="order-btn right-btn" onclick="moveSection(${index}, 'right')" title="Move down">→</button>`;
+    }
+    
     return `
-        <div class="section-card" data-index="${index}" draggable="true">
+        <div class="section-card" data-index="${index}">
             <div class="section-order">${index + 1}</div>
             <div class="section-header">
                 <div class="section-icon">${categoryIcon}</div>
@@ -205,7 +222,10 @@ function createSectionCard(section, index) {
                     <div class="section-name">${section.name}</div>
                     <div class="section-category">${section.category}</div>
                 </div>
-                <div class="drag-handle">⋮⋮</div>
+                <div class="order-controls">
+                    ${leftArrow}
+                    ${rightArrow}
+                </div>
             </div>
             <div class="section-input">
                 <label class="input-label">Class Name (Original: ${section.originalClass || ''})</label>
@@ -265,54 +285,21 @@ function updateSectionClass(index, className) {
     sections[index].customClass = className;
 }
 
-function setupDragAndDrop() {
-    const cards = document.querySelectorAll('.section-card');
-    cards.forEach(card => {
-        card.addEventListener('dragstart', (e) => {
-            card.classList.add('dragging');
-            e.dataTransfer.setData('text/plain', card.dataset.index);
-        });
-        card.addEventListener('dragend', () => {
-            card.classList.remove('dragging');
-        });
-    });
+function moveSection(index, direction) {
+    if (direction === 'left' && index > 0) {
+        // Move section up (swap with previous)
+        [sections[index], sections[index - 1]] = [sections[index - 1], sections[index]];
+    } else if (direction === 'right' && index < sections.length - 1) {
+        // Move section down (swap with next)
+        [sections[index], sections[index + 1]] = [sections[index + 1], sections[index]];
+    }
+    
+    // Re-render the sections grid with updated order
     const grid = document.getElementById('sectionsGrid');
-    grid.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        const draggingCard = document.querySelector('.dragging');
-        const cards = [...grid.querySelectorAll('.section-card:not(.dragging)')];
-        const afterCard = cards.reduce((closest, child) => {
-            const box = child.getBoundingClientRect();
-            const offset = e.clientY - box.top - box.height / 2;
-            if (offset < 0 && offset > closest.offset) {
-                return { offset: offset, element: child };
-            } else {
-                return closest;
-            }
-        }, { offset: Number.NEGATIVE_INFINITY }).element;
-        if (afterCard == null) {
-            grid.appendChild(draggingCard);
-        } else {
-            grid.insertBefore(draggingCard, afterCard);
-        }
-    });
-    grid.addEventListener('drop', (e) => {
-        e.preventDefault();
-        updateSectionOrder();
-    });
+    grid.innerHTML = sections.map((section, idx) => createSectionCard(section, idx)).join('');
 }
 
-function updateSectionOrder() {
-    const cards = document.querySelectorAll('.section-card');
-    const newSections = [];
-    cards.forEach((card, index) => {
-        const oldIndex = parseInt(card.dataset.index);
-        newSections.push({ ...sections[oldIndex], order: index + 1 });
-        card.dataset.index = index;
-        card.querySelector('.section-order').textContent = index + 1;
-    });
-    sections = newSections;
-}
+// Drag and drop functionality removed - replaced with arrow controls
 
 function setupGenerateButton() {
     document.getElementById('generateBtn').addEventListener('click', generateBricksJSON);
