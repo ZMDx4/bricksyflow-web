@@ -321,7 +321,12 @@ async function generateBricksJSON() {
                 }
                 section.originalClass = originalClass;
                 if (!section.customClass) section.customClass = originalClass;
-                const updatedSectionData = replaceCSSClasses(sectionData, section.customClass, section.originalClass);
+                const { content: updatedContent, globalClasses: updatedGlobalClasses } = semanticRenameAndRemap(sectionData.content, sectionData.globalClasses, section.customClass);
+                const updatedSectionData = {
+                    ...sectionData,
+                    content: updatedContent,
+                    globalClasses: updatedGlobalClasses
+                };
                 combinedSections.push(updatedSectionData);
             }
             generateBtn.innerHTML = `<span>⏳</span> Processing ${i + 1}/${sections.length} sections...`;
