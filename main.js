@@ -343,15 +343,20 @@ async function generateBricksJSON() {
                 sourceUrl: "https://cf.brixies.co",
                 version: "1.9.9"
             };
-            combinedSections.forEach(section => {
+            combinedSections.forEach((section, index) => {
+                console.log(`Section ${index + 1}: ${section.globalClasses ? section.globalClasses.length : 0} global classes`);
                 if (section.content) mergedOutput.content.push(...section.content);
                 if (section.globalClasses) mergedOutput.globalClasses.push(...section.globalClasses);
                 if (section.globalElements) mergedOutput.globalElements.push(...section.globalElements);
             });
+            console.log(`Total merged: ${mergedOutput.globalClasses.length} global classes`);
             output = mergedOutput;
         }
         const outputJson = document.getElementById('outputJson');
-        outputJson.textContent = JSON.stringify(output, null, 2);
+        const jsonString = JSON.stringify(output, null, 2);
+        console.log('Generated JSON length:', jsonString.length);
+        console.log('Global classes count:', output.globalClasses ? output.globalClasses.length : 0);
+        outputJson.textContent = jsonString;
         document.getElementById('outputSection').style.display = 'block';
         generateBtn.disabled = false;
         generateBtn.innerHTML = '<span>🎯</span> Generate Bricks JSON';
@@ -456,11 +461,13 @@ function semanticRenameAndRemap(content, globalClasses, prefix) {
     // 4. Create new globalClasses array with renamed classes and new IDs
     const newGlobalClasses = globalClasses.map(cls => {
         const newName = classNameMap[cls.name];
-        return {
+        const newClass = {
             ...cls,
             id: newNameToId[newName],
             name: newName
         };
+        console.log(`Renamed class: ${cls.name} -> ${newName}, ID: ${cls.id} -> ${newNameToId[newName]}`);
+        return newClass;
     });
     // 5. Remap _cssGlobalClasses in content to new IDs
     function remap(node) {
