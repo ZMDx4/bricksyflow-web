@@ -497,26 +497,27 @@ function semanticRenameAndRemap(content, globalClasses, prefix) {
         console.log(`Renamed class: ${cls.name} -> ${newName}, ID: ${cls.id} -> ${newNameToId[newName]}, has settings: ${!!cls.settings}`);
         return newClass;
     });
-    // 5. Remap _cssGlobalClasses in content to new IDs
-    function remap(node) {
-        if (node && typeof node === 'object') {
-            if (node.settings && Array.isArray(node.settings._cssGlobalClasses)) {
-                node.settings._cssGlobalClasses = node.settings._cssGlobalClasses
-                    .map(name => classNameToId[name] || name)
-                    .filter(Boolean);
-            }
-            if (Array.isArray(node.children)) {
-                node.children.forEach(childId => {}); // No-op, handled by recursion
-            }
-            for (const key in node) {
-                if (typeof node[key] === 'object' && node[key] !== null) {
-                    remap(node[key]);
+
+    // 5. Update content to reference new class IDs
+    const updatedContent = content.map(item => {
+        if (item.settings && item.settings._cssGlobalClasses) {
+            const updatedItem = { ...item };
+            updatedItem.settings = { ...item.settings };
+            updatedItem.settings._cssGlobalClasses = item.settings._cssGlobalClasses.map(oldId => {
+                // Find the original class by ID
+                const originalClass = globalClasses.find(cls => cls.id === oldId);
+                if (originalClass) {
+                    const newName = classNameMap[originalClass.name];
+                    return newNameToId[newName];
                 }
-            }
+                return oldId; // Fallback if not found
+            });
+            console.log(`Updated content item ${item.id}: ${item.settings._cssGlobalClasses.join(',')} -> ${updatedItem.settings._cssGlobalClasses.join(',')}`);
+            return updatedItem;
         }
-    }
-    content.forEach(remap);
-    return { content, globalClasses: newGlobalClasses };
+        return item;
+    });
+    return { content: updatedContent, globalClasses: newGlobalClasses };
 }
 
 function setupCopyButton() {
