@@ -1,65 +1,85 @@
 # Brixies Exporter Web Interface
 
-A beautiful web interface for downloading Brixies Builder section exports from the Figma plugin.
+A modern web interface for editing, renaming, and downloading Bricks Builder section exports from the Figma plugin. Designed for scalability, multi-framework support, and easy section management.
+
+---
 
 ## 🚀 Live Demo
 
-Visit: [https://zmdx4.github.io/brixies-exporter-web/](https://zmdx4.github.io/brixies-exporter-web/)
+Try it here: [https://zmdx4.github.io/brixies-exporter-web/](https://zmdx4.github.io/brixies-exporter-web/)
+
+---
 
 ## 📖 Usage
 
 ### From Figma Plugin
-1. Install the Brixies Exporter plugin in Figma
-2. Select sections or pages you want to export
-3. Click "Generate Export"
-4. The plugin will automatically open this web interface
-5. Download or copy the combined JSON for Bricks Builder
+
+1. Install the **Brixies Exporter** plugin in Figma.
+2. Select the sections or pages you want to export.
+3. Click **"Generate Export"** in the plugin.
+4. The plugin will open this web interface automatically.
+5. Review, rename, and download or copy the combined JSON for Bricks Builder.
 
 ### Direct Access
-Visit: `https://zmdx4.github.io/brixies-exporter-web/export/EXPORT_ID`
 
-Replace `EXPORT_ID` with the actual export ID from the Figma plugin.
+- Visit:  
+  `https://zmdx4.github.io/brixies-exporter-web/`
+
+---
 
 ## 🛠️ Features
 
-- **Beautiful UI**: Modern, responsive design with gradient backgrounds
-- **Export Management**: View all sections in your export
-- **Copy to Clipboard**: One-click copy of the entire JSON
-- **Download JSON**: Download the file directly to your computer
-- **Preview**: See a preview of the combined code
-- **Error Handling**: Graceful error messages for missing exports
-- **Mobile Responsive**: Works perfectly on all devices
+- **Beautiful UI:** Modern, responsive design with gradient backgrounds.
+- **Section Editing:** Review and rename root CSS classes for each section.
+- **Framework Support:** Easily extendable for multiple frameworks (e.g., `cf`, `acss`, `at`).
+- **Export Management:** View and reorder all sections in your export.
+- **Copy to Clipboard:** One-click copy of the entire JSON.
+- **Download JSON:** Download the file directly to your computer.
+- **Error Handling:** Graceful error messages for missing or malformed sections.
+- **Mobile Responsive:** Works perfectly on all devices.
+
+---
 
 ## 🔧 Technical Details
 
-- **Static HTML**: No backend required, hosted on GitHub Pages
-- **GitHub Integration**: Fetches section data from [brixies-sections-data-cf](https://github.com/ZMDx4/brixies-sections-data-cf)
-- **Modern JavaScript**: Uses async/await and modern browser APIs
-- **Progressive Enhancement**: Works even if JavaScript fails
+- **Static HTML/JS:** No backend required, hosted on GitHub Pages.
+- **Single Repository:** All section data and the web interface are in one repo for easy management.
+- **Section Data:** All section JSON files are organized under `/sections/{framework}/{category}/Section Name.json`.
+- **Metadata Index:** Auto-generated metadata index for fast section lookup and framework support.
+- **Modern JavaScript:** Uses async/await and modern browser APIs.
+- **Progressive Enhancement:** Works even if JavaScript fails.
 
-## 🌐 Custom Domain
-
-This site is ready for a custom domain. Simply:
-1. Purchase a domain (e.g., `brixies-exporter.com`)
-2. Add CNAME record pointing to `zmdx4.github.io`
-3. Enable custom domain in GitHub Pages settings
-4. Update the Figma plugin configuration
+---
 
 ## 📁 Repository Structure
 
 brixies-exporter-web/
 ├── index.html # Main web interface
+├── main.js # Application logic
+├── style.css # Styles
+├── sections/ # All section JSONs, organized by framework/category
+│ ├── cf/
+│ │ ├── banner/
+│ │ └── intro/
+│ └── acss/
+│ └── ...
+├── local-metadata-index.json # Auto-generated metadata for all sections
 └── README.md # This file
 
+---
 
-## �� Related Projects
+## 🔗 Related Projects
 
-- **[Brixies Exporter Plugin](https://github.com/ZMDx4/brixies-exporter)**: Figma plugin for exporting sections
-- **[Brixies Sections Data](https://github.com/ZMDx4/brixies-sections-data-cf)**: Repository containing all section templates
+- **Brixies Exporter Plugin:** Figma plugin for exporting sections.
+- **Section Data:** All section templates are now part of this repository.
+
+---
 
 ## 📄 License
 
-This project is open source and available under the [MIT License](LICENSE).
+This project is open source and available under the MIT License.
+
+---
 
 ## 🤝 Contributing
 
@@ -67,4 +87,4 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ---
 
-**Made with ❤️ for the Bricks Builder community**
+Made with ❤️ for the Bricks Builder community
