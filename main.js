@@ -178,11 +178,11 @@ function createSectionCard(section, index) {
                 <div class="drag-handle">⋮⋮</div>
             </div>
             <div class="section-input">
-                <label class="input-label">Class Name (Original: ${section.defaultClass})</label>
+                <label class="input-label">Class Name (Original: ${section.originalClass || ''})</label>
                 <input 
                     type="text" 
                     class="input-field" 
-                    value="${section.customClass || section.defaultClass || ''}"
+                    value="${section.customClass || section.originalClass || ''}"
                     onchange="updateSectionClass(${index}, this.value)"
                     placeholder="Enter new class name..."
                 >
@@ -277,50 +277,40 @@ function setupGenerateButton() {
 
 async function generateBricksJSON() {
     clearErrors();
-    
     try {
         const generateBtn = document.getElementById('generateBtn');
         generateBtn.disabled = true;
         generateBtn.innerHTML = '<span>⏳</span> Fetching sections...';
-
-        // Fetch all section data from GitHub
         const combinedSections = [];
-        
         for (let i = 0; i < sections.length; i++) {
             const section = sections[i];
             const sectionData = await fetchSectionData(section);
-            
             if (sectionData) {
-                // Replace CSS classes in the section data
-                const updatedSectionData = replaceCSSClasses(sectionData, section.customClass || section.defaultClass);
+                // Extract the true original class name from the section data
+                let originalClass = '';
+                if (sectionData.globalClasses && sectionData.globalClasses.length > 0) {
+                    const match = sectionData.globalClasses[0].name.match(/^([a-zA-Z0-9-]+)/);
+                    originalClass = match ? match[1] : sectionData.globalClasses[0].name;
+                }
+                section.originalClass = originalClass;
+                // If the user hasn't changed the class, set the input to the original
+                if (!section.customClass) section.customClass = originalClass;
+                // Replace CSS classes using the true original class
+                const updatedSectionData = replaceCSSClasses(sectionData, section.customClass, section.originalClass);
                 combinedSections.push(updatedSectionData);
             }
-            
-            // Update progress
             generateBtn.innerHTML = `<span>⏳</span> Processing ${i + 1}/${sections.length} sections...`;
         }
-
-        // Create the final export - just the section data array
         const finalExport = combinedSections;
-
-        // Display the JSON - each section as a separate object in the array
         const outputJson = document.getElementById('outputJson');
         outputJson.textContent = JSON.stringify(finalExport, null, 2);
-        
         document.getElementById('outputSection').style.display = 'block';
-        
-        // Reset button
         generateBtn.disabled = false;
         generateBtn.innerHTML = '<span>🎯</span> Generate Bricks JSON';
-        
-        // Go to step 3
         goToStep(3);
-        
     } catch (error) {
         console.error('Error generating JSON:', error);
         addError(2, `Failed to generate JSON: ${error.message}`);
-        
-        // Reset button
         const generateBtn = document.getElementById('generateBtn');
         generateBtn.disabled = false;
         generateBtn.innerHTML = '<span>🎯</span> Generate Bricks JSON';
@@ -452,11 +442,8 @@ function mapCategoryToFolder(category) {
     return categoryMap[category.toLowerCase()] || category.toLowerCase().replace(/\s+/g, '-');
 }
 
-function replaceCSSClasses(sectionData, newClassName) {
-    // Deep clone the section data
+function replaceCSSClasses(sectionData, newClassName, originalClass) {
     const updatedData = JSON.parse(JSON.stringify(sectionData));
-    
-    // Generate unique ID for a class name
     function generateUniqueId(className) {
         let hash = 0;
         for (let i = 0; i < className.length; i++) {
@@ -465,148 +452,74 @@ function replaceCSSClasses(sectionData, newClassName) {
         }
         return Math.abs(hash).toString(36).slice(0, 6);
     }
-    
-    // Find the original base class from the section data
-    let originalBaseClass = null;
-    if (sectionData.globalClasses && sectionData.globalClasses.length > 0) {
-        // Get the first class name and extract the base class
-        const firstClassName = sectionData.globalClasses[0].name;
-        const match = firstClassName.match(/^([a-zA-Z0-9-]+)/);
-        originalBaseClass = match ? match[1] : firstClassName;
-    }
-    
-    if (!originalBaseClass) {
-        console.warn('Could not find original base class, using default');
-        originalBaseClass = 'feature-17'; // fallback
-    }
-    
-    // Extract the new base class name
-    const newBaseClass = newClassName;
-    
-    console.log(`Replacing base class: ${originalBaseClass} -> ${newBaseClass}`);
-    
-    // Function to replace class names while preserving BEM structure
-    function replaceClassName(className) {
-        if (!className || typeof className !== 'string') return className;
-        
-        // If the class starts with the original base class, replace it
-        if (className.startsWith(originalBaseClass)) {
-            const suffix = className.substring(originalBaseClass.length);
-            return newBaseClass + suffix;
-        }
-        
-        // Handle prefixed classes (e.g., card-feature-17 -> card-prozy-features-section)
-        const prefixMatch = className.match(new RegExp(`^([a-zA-Z]+)-${originalBaseClass.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`));
-        if (prefixMatch) {
-            const prefix = prefixMatch[1];
-            const suffix = className.substring(prefixMatch[0].length);
-            return `${prefix}-${newBaseClass}${suffix}`;
-        }
-        
-        return className;
-    }
-    
-    // Function to recursively replace CSS classes in the data
-    function replaceClasses(obj) {
-        if (typeof obj === 'object' && obj !== null) {
-            for (const key in obj) {
-                if (typeof obj[key] === 'string') {
-                    // Replace CSS classes in string values
-                    if (key === 'cssClasses' || key === 'className' || key === 'class') {
-                        obj[key] = replaceClassName(obj[key]);
-                    } else if (key === 'content' && typeof obj[key] === 'string') {
-                        // Replace CSS classes in content strings
-                        obj[key] = obj[key].replace(/class="([^"]*)"/g, (match, classNames) => {
-                            const newClassNames = classNames.split(' ').map(cls => replaceClassName(cls)).join(' ');
-                            return `class="${newClassNames}"`;
-                        });
-                        obj[key] = obj[key].replace(/class='([^']*)'/g, (match, classNames) => {
-                            const newClassNames = classNames.split(' ').map(cls => replaceClassName(cls)).join(' ');
-                            return `class='${newClassNames}'`;
-                        });
-                    }
-                } else if (typeof obj[key] === 'object') {
-                    replaceClasses(obj[key]);
-                }
-            }
-        } else if (Array.isArray(obj)) {
-            obj.forEach(item => replaceClasses(item));
-        }
-    }
-    
-    // Replace CSS classes in the main structure
-    replaceClasses(updatedData);
-    
     // Create mapping from old IDs to new IDs
     const idMapping = {};
-    
     // Replace CSS classes in globalClasses array and generate new IDs
     if (updatedData.globalClasses && Array.isArray(updatedData.globalClasses)) {
         updatedData.globalClasses.forEach(globalClass => {
             if (globalClass.name) {
                 const oldId = globalClass.id;
                 const oldName = globalClass.name;
-                const newName = replaceClassName(globalClass.name);
+                // Replace only the root class (originalClass) with newClassName
+                let newName = oldName;
+                if (oldName.startsWith(originalClass)) {
+                    const suffix = oldName.substring(originalClass.length);
+                    newName = newClassName + suffix;
+                }
+                // Handle prefixed classes (e.g., card-feature-17)
+                const prefixMatch = oldName.match(new RegExp(`^([a-zA-Z]+)-${originalClass.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`));
+                if (prefixMatch) {
+                    const prefix = prefixMatch[1];
+                    const suffix = oldName.substring(prefixMatch[0].length);
+                    newName = `${prefix}-${newClassName}${suffix}`;
+                }
                 globalClass.name = newName;
-                
-                // Generate a new unique ID for the class
                 const newId = generateUniqueId(newName);
                 globalClass.id = newId;
-                
-                // Store the mapping
                 idMapping[oldId] = newId;
             }
         });
     }
-    
     // Replace CSS classes in content array and update IDs
     if (updatedData.content && Array.isArray(updatedData.content)) {
         updatedData.content.forEach(item => {
             if (item.settings && item.settings._cssGlobalClasses) {
                 item.settings._cssGlobalClasses = item.settings._cssGlobalClasses.map(oldId => {
-                    // Map the old ID to the new ID
                     return idMapping[oldId] || oldId;
                 });
             }
         });
     }
-    
     // Update JavaScript code and CSS custom code if they contain class references
     if (updatedData.content) {
         updatedData.content.forEach(item => {
             if (item.settings) {
-                // Update JavaScript code
                 if (item.settings.javascriptCode) {
-                    // Replace class references in JavaScript code
                     item.settings.javascriptCode = item.settings.javascriptCode.replace(
-                        new RegExp(`\\.${originalBaseClass.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g'),
-                        `.${newBaseClass}`
+                        new RegExp(`\\.${originalClass.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g'),
+                        `.${newClassName}`
                     );
                 }
-                
-                // Update CSS custom code
                 if (item.settings._cssCustom) {
                     item.settings._cssCustom = item.settings._cssCustom.replace(
-                        new RegExp(`\\.${originalBaseClass.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g'),
-                        `.${newBaseClass}`
+                        new RegExp(`\\.${originalClass.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g'),
+                        `.${newClassName}`
                     );
                 }
             }
         });
     }
-    
     // Also update CSS custom code in globalClasses
     if (updatedData.globalClasses && Array.isArray(updatedData.globalClasses)) {
         updatedData.globalClasses.forEach(globalClass => {
             if (globalClass.settings && globalClass.settings._cssCustom) {
                 globalClass.settings._cssCustom = globalClass.settings._cssCustom.replace(
-                    new RegExp(`\\.${originalBaseClass.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g'),
-                    `.${newBaseClass}`
+                    new RegExp(`\\.${originalClass.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g'),
+                    `.${newClassName}`
                 );
             }
         });
     }
-    
     return updatedData;
 }
 
