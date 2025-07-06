@@ -323,9 +323,14 @@ async function generateBricksJSON() {
             }
             generateBtn.innerHTML = `<span>⏳</span> Processing ${i + 1}/${sections.length} sections...`;
         }
-        const finalExport = combinedSections;
+        let output;
+        if (combinedSections.length === 1) {
+            output = combinedSections[0]; // single object for single section
+        } else {
+            output = combinedSections; // array for multiple sections
+        }
         const outputJson = document.getElementById('outputJson');
-        outputJson.textContent = JSON.stringify(finalExport, null, 2);
+        outputJson.textContent = JSON.stringify(output, null, 2);
         document.getElementById('outputSection').style.display = 'block';
         generateBtn.disabled = false;
         generateBtn.innerHTML = '<span>🎯</span> Generate Bricks JSON';
