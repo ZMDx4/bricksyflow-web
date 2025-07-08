@@ -329,6 +329,10 @@ async function generateBricksJSON() {
                     content: updatedContent,
                     globalClasses: updatedGlobalClasses
                 };
+                
+                // NEW: Validate custom code updates
+                validateCustomCodeUpdates(sectionData, updatedSectionData, section.customClass);
+                
                 combinedSections.push(updatedSectionData);
             }
             generateBtn.innerHTML = `<span>⏳</span> Processing ${i + 1}/${sections.length} sections...`;
@@ -478,16 +482,19 @@ function semanticRenameAndRemap(content, globalClasses, prefix) {
         const newName = replaceRoot(cls.name, prefix);
         classNameMap[cls.name] = newName;
     });
+    
     // 2. Build mapping: new class name -> new ID
     const newNameToId = {};
     Object.values(classNameMap).forEach(newName => {
         newNameToId[newName] = generateClassId(newName);
     });
+    
     // 3. Build mapping: old class name -> new ID
     const classNameToId = {};
     Object.entries(classNameMap).forEach(([oldName, newName]) => {
         classNameToId[oldName] = newNameToId[newName];
     });
+    
     // 4. Create new globalClasses array with renamed classes and new IDs
     const newGlobalClasses = globalClasses.map(cls => {
         const newName = classNameMap[cls.name];
@@ -500,10 +507,12 @@ function semanticRenameAndRemap(content, globalClasses, prefix) {
         return newClass;
     });
 
-    // 5. Update content to reference new class IDs
+    // 5. Update content to reference new class IDs and handle custom code
     const updatedContent = content.map(item => {
+        let updatedItem = { ...item };
+        
+        // Update _cssGlobalClasses (existing logic)
         if (item.settings && item.settings._cssGlobalClasses) {
-            const updatedItem = { ...item };
             updatedItem.settings = { ...item.settings };
             updatedItem.settings._cssGlobalClasses = item.settings._cssGlobalClasses.map(oldId => {
                 // Find the original class by ID
@@ -515,11 +524,113 @@ function semanticRenameAndRemap(content, globalClasses, prefix) {
                 return oldId; // Fallback if not found
             });
             console.log(`Updated content item ${item.id}: ${item.settings._cssGlobalClasses.join(',')} -> ${updatedItem.settings._cssGlobalClasses.join(',')}`);
-            return updatedItem;
         }
-        return item;
+        
+        // NEW: Update custom CSS code
+        if (item.settings && item.settings.cssCode) {
+            updatedItem.settings = { ...updatedItem.settings };
+            let updatedCssCode = item.settings.cssCode;
+            
+            // Replace all hardcoded class names in CSS
+            Object.entries(classNameMap).forEach(([oldName, newName]) => {
+                // Escape special regex characters in the old class name
+                const oldNameEscaped = oldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                
+                // Match CSS class selectors (with dot prefix, word boundaries, or end of string)
+                const cssRegex = new RegExp(`\\.${oldNameEscaped}([^a-zA-Z0-9_-]|$)`, 'g');
+                updatedCssCode = updatedCssCode.replace(cssRegex, `.${newName}$1`);
+                
+                // Also handle class names in comments or strings
+                const commentRegex = new RegExp(`(${oldNameEscaped})`, 'g');
+                updatedCssCode = updatedCssCode.replace(commentRegex, (match, p1) => {
+                    // Only replace if it's not already been replaced and looks like a class name
+                    if (match.includes(oldName) && !match.includes(newName)) {
+                        return match.replace(oldName, newName);
+                    }
+                    return match;
+                });
+            });
+            
+            updatedItem.settings.cssCode = updatedCssCode;
+            console.log(`Updated CSS code for item ${item.id}: ${item.settings.cssCode ? 'Original length: ' + item.settings.cssCode.length : 'N/A'} -> New length: ${updatedCssCode.length}`);
+        }
+        
+        // NEW: Update custom JavaScript code
+        if (item.settings && item.settings.javascriptCode) {
+            updatedItem.settings = { ...updatedItem.settings };
+            let updatedJsCode = item.settings.javascriptCode;
+            
+            // Replace all hardcoded class names in JavaScript
+            Object.entries(classNameMap).forEach(([oldName, newName]) => {
+                // Escape special regex characters in the old class name
+                const oldNameEscaped = oldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                
+                // Match JavaScript class selectors in querySelector, querySelectorAll, etc.
+                const jsSelectorRegex = new RegExp(`(['"])${oldNameEscaped}([^a-zA-Z0-9_-]|\\1)`, 'g');
+                updatedJsCode = updatedJsCode.replace(jsSelectorRegex, `$1${newName}$2`);
+                
+                // Also handle class names in template literals or other contexts
+                const templateRegex = new RegExp(`(\`)${oldNameEscaped}([^a-zA-Z0-9_-]|\\1)`, 'g');
+                updatedJsCode = updatedJsCode.replace(templateRegex, `$1${newName}$2`);
+                
+                // Handle class names in comments
+                const commentRegex = new RegExp(`(//.*?${oldNameEscaped})`, 'g');
+                updatedJsCode = updatedJsCode.replace(commentRegex, (match, p1) => {
+                    return p1.replace(oldName, newName);
+                });
+            });
+            
+            updatedItem.settings.javascriptCode = updatedJsCode;
+            console.log(`Updated JS code for item ${item.id}: ${item.settings.javascriptCode ? 'Original length: ' + item.settings.javascriptCode.length : 'N/A'} -> New length: ${updatedJsCode.length}`);
+        }
+        
+        return updatedItem;
     });
+    
     return { content: updatedContent, globalClasses: newGlobalClasses };
+}
+
+// Add validation function to check for custom code updates
+function validateCustomCodeUpdates(sectionData, updatedSectionData, customClass) {
+    const originalContent = sectionData.content;
+    const updatedContent = updatedSectionData.content;
+    
+    // Check for custom code blocks
+    const customCodeBlocks = originalContent.filter(item => 
+        item.settings && (item.settings.cssCode || item.settings.javascriptCode)
+    );
+    
+    if (customCodeBlocks.length > 0) {
+        console.log(`⚠️ Section "${customClass}" has ${customCodeBlocks.length} custom code block(s) that were updated`);
+        
+        // Log what was changed
+        customCodeBlocks.forEach((block, index) => {
+            if (block.settings.cssCode) {
+                console.log(`  CSS Block ${index + 1}: Updated with new class names`);
+                console.log(`    Original CSS length: ${block.settings.cssCode.length}`);
+                const updatedBlock = updatedContent.find(item => item.id === block.id);
+                if (updatedBlock && updatedBlock.settings.cssCode) {
+                    console.log(`    Updated CSS length: ${updatedBlock.settings.cssCode.length}`);
+                }
+            }
+            if (block.settings.javascriptCode) {
+                console.log(`  JS Block ${index + 1}: Updated with new class names`);
+                console.log(`    Original JS length: ${block.settings.javascriptCode.length}`);
+                const updatedBlock = updatedContent.find(item => item.id === block.id);
+                if (updatedBlock && updatedBlock.settings.javascriptCode) {
+                    console.log(`    Updated JS length: ${updatedBlock.settings.javascriptCode.length}`);
+                }
+            }
+        });
+        
+        // Add warning to user
+        addCustomCodeWarning(customClass);
+    }
+}
+
+// Add warning function for custom code
+function addCustomCodeWarning(sectionName) {
+    addError(2, `⚠️ Section "${sectionName}" contains custom CSS/JS code. Please verify the generated code works correctly.`);
 }
 
 function setupCopyButton() {
