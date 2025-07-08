@@ -474,27 +474,37 @@ function generateClassId(className) {
     return Math.abs(hash).toString(36).slice(0, 6);
 }
 
-// Main function to rename classes and update IDs for Bricks export
+// Helper: Generate a new unique ID for an element
+function generateElementId(oldId, prefix) {
+    // Use a hash of the prefix + oldId for reproducibility
+    let hash = 0;
+    const str = prefix + ':' + oldId;
+    for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) - hash) + str.charCodeAt(i);
+        hash |= 0;
+    }
+    return 'el_' + Math.abs(hash).toString(36).slice(0, 8);
+}
+
+// Main function to rename classes, update IDs, and update custom code
 function semanticRenameAndRemap(content, globalClasses, prefix) {
     // 1. Build mapping: old class name -> new class name (with prefix)
     const classNameMap = {};
     globalClasses.forEach(cls => {
-        const newName = replaceRoot(cls.name, prefix);
+        const oldRoot = extractRoot(cls.name);
+        const newName = cls.name.replace(new RegExp('^' + oldRoot), prefix);
         classNameMap[cls.name] = newName;
     });
-    
     // 2. Build mapping: new class name -> new ID
     const newNameToId = {};
     Object.values(classNameMap).forEach(newName => {
         newNameToId[newName] = generateClassId(newName);
     });
-    
     // 3. Build mapping: old class name -> new ID
     const classNameToId = {};
     Object.entries(classNameMap).forEach(([oldName, newName]) => {
         classNameToId[oldName] = newNameToId[newName];
     });
-    
     // 4. Create new globalClasses array with renamed classes and new IDs
     const newGlobalClasses = globalClasses.map(cls => {
         const newName = classNameMap[cls.name];
@@ -503,90 +513,71 @@ function semanticRenameAndRemap(content, globalClasses, prefix) {
             id: newNameToId[newName],
             name: newName
         };
-        console.log(`Renamed class: ${cls.name} -> ${newName}, ID: ${cls.id} -> ${newNameToId[newName]}, has settings: ${!!cls.settings}`);
         return newClass;
     });
-
-    // 5. Update content to reference new class IDs and handle custom code
-    const updatedContent = content.map(item => {
-        let updatedItem = { ...item };
-        
-        // Update _cssGlobalClasses (existing logic)
+    // 5. Remap element IDs and references
+    const idMap = {};
+    content.forEach(item => {
+        idMap[item.id] = generateElementId(item.id, prefix);
+    });
+    function remapItem(item) {
+        const newItem = { ...item };
+        // Remap id
+        newItem.id = idMap[item.id];
+        // Remap parent
+        if (item.parent && idMap[item.parent]) newItem.parent = idMap[item.parent];
+        // Remap children
+        if (Array.isArray(item.children)) {
+            newItem.children = item.children.map(cid => idMap[cid] || cid);
+        }
+        // Remap _cssGlobalClasses
         if (item.settings && item.settings._cssGlobalClasses) {
-            updatedItem.settings = { ...item.settings };
-            updatedItem.settings._cssGlobalClasses = item.settings._cssGlobalClasses.map(oldId => {
-                // Find the original class by ID
+            newItem.settings = { ...item.settings };
+            newItem.settings._cssGlobalClasses = item.settings._cssGlobalClasses.map(oldId => {
                 const originalClass = globalClasses.find(cls => cls.id === oldId);
                 if (originalClass) {
                     const newName = classNameMap[originalClass.name];
                     return newNameToId[newName];
                 }
-                return oldId; // Fallback if not found
+                return oldId;
             });
-            console.log(`Updated content item ${item.id}: ${item.settings._cssGlobalClasses.join(',')} -> ${updatedItem.settings._cssGlobalClasses.join(',')}`);
         }
-        
-        // NEW: Update custom CSS code
+        // Remap custom CSS code
         if (item.settings && item.settings.cssCode) {
-            updatedItem.settings = { ...updatedItem.settings };
+            newItem.settings = { ...newItem.settings };
             let updatedCssCode = item.settings.cssCode;
-            
-            // Replace all hardcoded class names in CSS
+            // Replace class names
             Object.entries(classNameMap).forEach(([oldName, newName]) => {
-                // Escape special regex characters in the old class name
                 const oldNameEscaped = oldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                
-                // Match CSS class selectors (with dot prefix, word boundaries, or end of string)
                 const cssRegex = new RegExp(`\\.${oldNameEscaped}([^a-zA-Z0-9_-]|$)`, 'g');
                 updatedCssCode = updatedCssCode.replace(cssRegex, `.${newName}$1`);
-                
-                // Also handle class names in comments or strings
-                const commentRegex = new RegExp(`(${oldNameEscaped})`, 'g');
-                updatedCssCode = updatedCssCode.replace(commentRegex, (match, p1) => {
-                    // Only replace if it's not already been replaced and looks like a class name
-                    if (match.includes(oldName) && !match.includes(newName)) {
-                        return match.replace(oldName, newName);
-                    }
-                    return match;
-                });
             });
-            
-            updatedItem.settings.cssCode = updatedCssCode;
-            console.log(`Updated CSS code for item ${item.id}: ${item.settings.cssCode ? 'Original length: ' + item.settings.cssCode.length : 'N/A'} -> New length: ${updatedCssCode.length}`);
+            // Replace element IDs in CSS (if referenced as #id)
+            Object.entries(idMap).forEach(([oldId, newId]) => {
+                const idRegex = new RegExp(`#${oldId}(?![a-zA-Z0-9_-])`, 'g');
+                updatedCssCode = updatedCssCode.replace(idRegex, `#${newId}`);
+            });
+            newItem.settings.cssCode = updatedCssCode;
         }
-        
-        // NEW: Update custom JavaScript code
+        // Remap custom JS code
         if (item.settings && item.settings.javascriptCode) {
-            updatedItem.settings = { ...updatedItem.settings };
+            newItem.settings = { ...newItem.settings };
             let updatedJsCode = item.settings.javascriptCode;
-            
-            // Replace all hardcoded class names in JavaScript
             Object.entries(classNameMap).forEach(([oldName, newName]) => {
-                // Escape special regex characters in the old class name
                 const oldNameEscaped = oldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                
-                // Match JavaScript class selectors in querySelector, querySelectorAll, etc.
+                // Use a backreference for the quote character
                 const jsSelectorRegex = new RegExp(`(['"])${oldNameEscaped}([^a-zA-Z0-9_-]|\\1)`, 'g');
                 updatedJsCode = updatedJsCode.replace(jsSelectorRegex, `$1${newName}$2`);
-                
-                // Also handle class names in template literals or other contexts
-                const templateRegex = new RegExp(`(\`)${oldNameEscaped}([^a-zA-Z0-9_-]|\\1)`, 'g');
-                updatedJsCode = updatedJsCode.replace(templateRegex, `$1${newName}$2`);
-                
-                // Handle class names in comments
-                const commentRegex = new RegExp(`(//.*?${oldNameEscaped})`, 'g');
-                updatedJsCode = updatedJsCode.replace(commentRegex, (match, p1) => {
-                    return p1.replace(oldName, newName);
-                });
             });
-            
-            updatedItem.settings.javascriptCode = updatedJsCode;
-            console.log(`Updated JS code for item ${item.id}: ${item.settings.javascriptCode ? 'Original length: ' + item.settings.javascriptCode.length : 'N/A'} -> New length: ${updatedJsCode.length}`);
+            Object.entries(idMap).forEach(([oldId, newId]) => {
+                const idRegex = new RegExp(`(['"])${oldId}(['"])`, 'g');
+                updatedJsCode = updatedJsCode.replace(idRegex, `$1${newId}$2`);
+            });
+            newItem.settings.javascriptCode = updatedJsCode;
         }
-        
-        return updatedItem;
-    });
-    
+        return newItem;
+    }
+    const updatedContent = content.map(remapItem);
     return { content: updatedContent, globalClasses: newGlobalClasses };
 }
 
