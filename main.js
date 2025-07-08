@@ -493,51 +493,46 @@ function semanticRenameAndRemap(content, globalClasses, prefix) {
         const newName = cls.name.replace(new RegExp('^' + oldRoot), prefix);
         classNameMap[cls.name] = newName;
     });
-    // 2. Build mapping: new class name -> new ID
-    const newNameToId = {};
-    Object.values(classNameMap).forEach(newName => {
-        newNameToId[newName] = generateClassId(newName);
+    
+    // 2. Generate random IDs for all content elements
+    const contentIdMap = {};
+    content.forEach(item => {
+        contentIdMap[item.id] = randomId(6);
     });
-    // 3. Build mapping: old class name -> new ID
-    const classNameToId = {};
-    Object.entries(classNameMap).forEach(([oldName, newName]) => {
-        classNameToId[oldName] = newNameToId[newName];
+    
+    // 3. Generate random IDs for all globalClasses (matching Brixies behavior)
+    const globalClassIdMap = {};
+    globalClasses.forEach(cls => {
+        globalClassIdMap[cls.id] = randomId(6);
     });
-    // 4. Create new globalClasses array with renamed classes and new IDs
+    
+    // 4. Create new globalClasses array with renamed classes and new random IDs
     const newGlobalClasses = globalClasses.map(cls => {
         const newName = classNameMap[cls.name];
         const newClass = {
             ...cls,
-            id: newNameToId[newName],
+            id: globalClassIdMap[cls.id], // Use random ID instead of hash-based
             name: newName
         };
         return newClass;
     });
-    // 5. Remap element IDs and references using random IDs
-    const idMap = {};
-    content.forEach(item => {
-        idMap[item.id] = randomId(6);
-    });
+    
+    // 5. Remap content elements with new random IDs
     function remapItem(item) {
         const newItem = { ...item };
         // Remap id
-        newItem.id = idMap[item.id];
+        newItem.id = contentIdMap[item.id];
         // Remap parent
-        if (item.parent && idMap[item.parent]) newItem.parent = idMap[item.parent];
+        if (item.parent && contentIdMap[item.parent]) newItem.parent = contentIdMap[item.parent];
         // Remap children
         if (Array.isArray(item.children)) {
-            newItem.children = item.children.map(cid => idMap[cid] || cid);
+            newItem.children = item.children.map(cid => contentIdMap[cid] || cid);
         }
-        // Remap _cssGlobalClasses
+        // Remap _cssGlobalClasses - use the new random IDs from globalClassIdMap
         if (item.settings && item.settings._cssGlobalClasses) {
             newItem.settings = { ...item.settings };
             newItem.settings._cssGlobalClasses = item.settings._cssGlobalClasses.map(oldId => {
-                const originalClass = globalClasses.find(cls => cls.id === oldId);
-                if (originalClass) {
-                    const newName = classNameMap[originalClass.name];
-                    return newNameToId[newName];
-                }
-                return oldId;
+                return globalClassIdMap[oldId] || oldId;
             });
         }
         // Remap custom CSS code
@@ -551,7 +546,7 @@ function semanticRenameAndRemap(content, globalClasses, prefix) {
                 updatedCssCode = updatedCssCode.replace(cssRegex, `.${newName}$1`);
             });
             // Replace element IDs in CSS (if referenced as #id)
-            Object.entries(idMap).forEach(([oldId, newId]) => {
+            Object.entries(contentIdMap).forEach(([oldId, newId]) => {
                 const idRegex = new RegExp(`#${oldId}(?![a-zA-Z0-9_-])`, 'g');
                 updatedCssCode = updatedCssCode.replace(idRegex, `#${newId}`);
             });
@@ -567,7 +562,7 @@ function semanticRenameAndRemap(content, globalClasses, prefix) {
                 const jsSelectorRegex = new RegExp(`(['"])${oldNameEscaped}([^a-zA-Z0-9_-]|\\1)`, 'g');
                 updatedJsCode = updatedJsCode.replace(jsSelectorRegex, `$1${newName}$2`);
             });
-            Object.entries(idMap).forEach(([oldId, newId]) => {
+            Object.entries(contentIdMap).forEach(([oldId, newId]) => {
                 const idRegex = new RegExp(`(['"])${oldId}(['"])`, 'g');
                 updatedJsCode = updatedJsCode.replace(idRegex, `$1${newId}$2`);
             });
