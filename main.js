@@ -474,16 +474,14 @@ function generateClassId(className) {
     return Math.abs(hash).toString(36).slice(0, 6);
 }
 
-// Helper: Generate a new unique ID for an element
-function generateElementId(oldId, prefix) {
-    // Use a hash of the prefix + oldId for reproducibility
-    let hash = 0;
-    const str = prefix + ':' + oldId;
-    for (let i = 0; i < str.length; i++) {
-        hash = ((hash << 5) - hash) + str.charCodeAt(i);
-        hash |= 0;
+// Helper: Generate a random unique ID for an element
+function randomId(length = 6) {
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
     }
-    return 'el_' + Math.abs(hash).toString(36).slice(0, 8);
+    return result;
 }
 
 // Main function to rename classes, update IDs, and update custom code
@@ -515,10 +513,10 @@ function semanticRenameAndRemap(content, globalClasses, prefix) {
         };
         return newClass;
     });
-    // 5. Remap element IDs and references
+    // 5. Remap element IDs and references using random IDs
     const idMap = {};
     content.forEach(item => {
-        idMap[item.id] = generateElementId(item.id, prefix);
+        idMap[item.id] = randomId(6);
     });
     function remapItem(item) {
         const newItem = { ...item };
