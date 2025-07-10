@@ -1,5 +1,5 @@
 {
-  "name": "brixies-exporter-web",
+  "name": "bricksyflow-web",
   "version": "1.0.0",
   "description": "A modern web interface for editing, renaming, and downloading Bricks Builder section exports from the Figma plugin. Designed for scalability, multi-framework support, and easy section management.",
   "main": "main.js",
@@ -8,13 +8,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ZMDx4/brixies-exporter-web.git"
+    "url": "git+https://github.com/ZMDx4/bricksyflow-web.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/ZMDx4/brixies-exporter-web/issues"
+    "url": "https://github.com/ZMDx4/bricksyflow-web/issues"
   },
-  "homepage": "https://github.com/ZMDx4/brixies-exporter-web#readme"
+      "homepage": "https://github.com/ZMDx4/bricksyflow-web#readme"
 }

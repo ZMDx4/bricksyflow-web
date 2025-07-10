@@ -1,4 +1,4 @@
-# Brixies Exporter Web Interface
+# BricksyFlow Web Interface
 
 A modern web interface for editing, renaming, and downloading Bricks Builder section exports from the Figma plugin. Designed for scalability, multi-framework support, and easy section management.
 
@@ -14,7 +14,7 @@ Try it here: [https://zmdx4.github.io/brixies-exporter-web/](https://zmdx4.githu
 
 ### From Figma Plugin
 
-1. Install the **Brixies Exporter** plugin in Figma.
+1. Install the **BricksyFlow** plugin in Figma.
 2. Select the sections or pages you want to export.
 3. Click **"Generate Export"** in the plugin.
 4. The plugin will open this web interface automatically.
@@ -70,7 +70,7 @@ brixies-exporter-web/
 
 ## 🔗 Related Projects
 
-- **Brixies Exporter Plugin:** Figma plugin for exporting sections.
+- **BricksyFlow Plugin:** Figma plugin for exporting sections.
 - **Section Data:** All section templates are now part of this repository.
 
 ---

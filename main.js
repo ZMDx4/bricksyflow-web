@@ -157,7 +157,7 @@ function handlePasteData(data) {
                 try {
                     // Decode the relative path to handle any URL encoding, then build the raw GitHub URL
                     const decodedPath = decodeURIComponent(section.relativePath);
-                    const rawUrl = `https://raw.githubusercontent.com/ZMDx4/brixies-exporter-web/main/${decodedPath}`;
+                    const rawUrl = `https://raw.githubusercontent.com/ZMDx4/bricksyflow-web/main/${decodedPath}`;
                     const resp = await fetch(rawUrl);
                     if (resp.ok) {
                         const data = await resp.json();
@@ -411,7 +411,7 @@ async function fetchSectionData(section) {
         }
         // Decode the relative path to handle any URL encoding, then build the raw GitHub URL
         const decodedPath = decodeURIComponent(section.relativePath);
-        const rawUrl = `https://raw.githubusercontent.com/ZMDx4/brixies-exporter-web/main/${decodedPath}`;
+        const rawUrl = `https://raw.githubusercontent.com/ZMDx4/bricksyflow-web/main/${decodedPath}`;
         console.log(`Fetching: ${rawUrl}`);
         console.log(`Section: ${section.name}, Category: ${section.category}, Custom Class: ${section.customClass || section.suggestedClass}`);
         const response = await fetch(rawUrl);

@@ -39,7 +39,7 @@ function generateLocalMetadataIndex() {
         metadataIndex.frameworks.cf[category][fileName] = {
           id: fileName.toLowerCase().replace(/\s+/g, '-'),
           category: category,
-          defaultClass: `brixies-${fileName.toLowerCase().replace(/\s+/g, '-')}`,
+          defaultClass: `bricksyflow-${fileName.toLowerCase().replace(/\s+/g, '-')}`,
           relativePath: relativePath
         };
       }
