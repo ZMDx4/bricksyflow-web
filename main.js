@@ -488,11 +488,33 @@ function randomId(length = 6) {
 function semanticRenameAndRemap(content, globalClasses, prefix) {
     // 1. Build mapping: old class name -> new class name (with prefix)
     const classNameMap = {};
+    console.log('🔍 Building class name mappings:');
+    console.log('Original global classes:', globalClasses.map(cls => cls.name));
+    console.log('Target prefix:', prefix);
+    
     globalClasses.forEach(cls => {
         const oldRoot = extractRoot(cls.name);
-        const newName = cls.name.replace(new RegExp('^' + oldRoot), prefix);
+        const oldSuffix = cls.name.substring(oldRoot.length);
+        
+        // Special handling for card classes to preserve the card- prefix
+        let newName;
+        if (cls.name.startsWith('card-')) {
+            // For card classes, preserve the card- prefix but update the rest
+            // Extract the part after "card-" and find the root within that part
+            const cardSuffix = cls.name.replace('card-', '');
+            const cardRoot = extractRoot(cardSuffix);
+            const cardRootSuffix = cardSuffix.substring(cardRoot.length);
+            newName = 'card-' + prefix + cardRootSuffix;
+        } else {
+            // Create the new class name by replacing the root and preserving the suffix
+            newName = cls.name.replace(oldRoot, prefix);
+        }
+        
         classNameMap[cls.name] = newName;
+        console.log(`  ${cls.name} -> ${newName} (root: ${oldRoot}, suffix: ${oldSuffix})`);
     });
+    
+    console.log('Final class name mappings:', classNameMap);
     
     // 2. Generate random IDs for all content elements
     const contentIdMap = {};
@@ -503,7 +525,9 @@ function semanticRenameAndRemap(content, globalClasses, prefix) {
     // 3. Generate random IDs for all globalClasses (matching Brixies behavior)
     const globalClassIdMap = {};
     globalClasses.forEach(cls => {
-        globalClassIdMap[cls.id] = randomId(6);
+        const newId = randomId(6);
+        globalClassIdMap[cls.id] = newId;
+        console.log(`Mapping global class ID: ${cls.id} -> ${newId} (${cls.name})`);
     });
     
     // 4. Create new globalClasses array with renamed classes and new random IDs
@@ -519,58 +543,183 @@ function semanticRenameAndRemap(content, globalClasses, prefix) {
     
     // 5. Remap content elements with new random IDs
     function remapItem(item) {
-        const newItem = { ...item };
-        // Remap id
+        // Create a deep copy of the item to preserve ALL properties including nested objects
+        const newItem = JSON.parse(JSON.stringify(item));
+        
+        // Remap the element ID (this is the unique JSON ID that Brixies uses)
         newItem.id = contentIdMap[item.id];
-        // Remap parent
-        if (item.parent && contentIdMap[item.parent]) newItem.parent = contentIdMap[item.parent];
-        // Remap children
+        
+        // Remap parent reference
+        if (item.parent && contentIdMap[item.parent]) {
+            newItem.parent = contentIdMap[item.parent];
+        }
+        
+        // Remap children references
         if (Array.isArray(item.children)) {
             newItem.children = item.children.map(cid => contentIdMap[cid] || cid);
         }
-        // Remap _cssGlobalClasses - use the new random IDs from globalClassIdMap
-        if (item.settings && item.settings._cssGlobalClasses) {
-            newItem.settings = { ...item.settings };
-            newItem.settings._cssGlobalClasses = item.settings._cssGlobalClasses.map(oldId => {
-                return globalClassIdMap[oldId] || oldId;
+        
+        // Handle settings object - preserve ALL original properties
+        if (item.settings) {
+            // Ensure we have a settings object
+            if (!newItem.settings) newItem.settings = {};
+            
+            // Remap _cssGlobalClasses - use the new random IDs from globalClassIdMap
+            if (item.settings._cssGlobalClasses) {
+                newItem.settings._cssGlobalClasses = item.settings._cssGlobalClasses.map(oldId => {
+                    // Find the new ID for this global class
+                    const newId = globalClassIdMap[oldId];
+                    if (!newId) {
+                        console.warn(`Warning: Could not find new ID for global class ${oldId}`);
+                        return oldId;
+                    }
+                    console.log(`Remapping _cssGlobalClasses: ${oldId} -> ${newId}`);
+                    return newId;
+                });
+            }
+            
+            // Remap custom CSS code - update class names and element IDs
+            if (item.settings.cssCode) {
+                let updatedCssCode = item.settings.cssCode;
+                
+                console.log(`🔧 Updating CSS code for ${item.name} element (ID: ${item.id})`);
+                console.log(`  Original CSS: ${updatedCssCode.substring(0, 200)}...`);
+                
+                // Replace class names in CSS selectors
+                Object.entries(classNameMap).forEach(([oldName, newName]) => {
+                    const oldNameEscaped = oldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    const oldRoot = extractRoot(oldName);
+                    const newRoot = extractRoot(newName);
+                    
+                    console.log(`  🔄 Mapping CSS: ${oldName} -> ${newName}`);
+                    
+                    // Replace simple class selectors (e.g., .feature-61 -> .new-prefix-61)
+                    const simpleClassRegex = new RegExp(`\\.${oldNameEscaped}([^a-zA-Z0-9_-]|$)`, 'g');
+                    const simpleMatches = updatedCssCode.match(simpleClassRegex);
+                    if (simpleMatches) {
+                        console.log(`    Found simple class matches: ${simpleMatches.join(', ')}`);
+                    }
+                    updatedCssCode = updatedCssCode.replace(simpleClassRegex, `.${newName}$1`);
+                    
+                    // Replace BEM-style class selectors (e.g., .card-feature-61__wrapper -> .card-new-prefix-61__wrapper)
+                    const bemClassRegex = new RegExp(`\\.${oldRoot.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(__[a-zA-Z0-9_-]+)`, 'g');
+                    const bemMatches = updatedCssCode.match(bemClassRegex);
+                    if (bemMatches) {
+                        console.log(`    Found BEM class matches: ${bemMatches.join(', ')}`);
+                    }
+                    updatedCssCode = updatedCssCode.replace(bemClassRegex, `.${newRoot}$1`);
+                    
+                    // Replace class names in attribute selectors
+                    const attrSelectorRegex = new RegExp(`\\[class\\*=["']${oldNameEscaped}["']\\]`, 'g');
+                    const attrMatches = updatedCssCode.match(attrSelectorRegex);
+                    if (attrMatches) {
+                        console.log(`    Found attribute selector matches: ${attrMatches.join(', ')}`);
+                    }
+                    updatedCssCode = updatedCssCode.replace(attrSelectorRegex, `[class*="${newName}"]`);
+                });
+                
+                // Replace element IDs in CSS (if referenced as #id)
+                Object.entries(contentIdMap).forEach(([oldId, newId]) => {
+                    const idRegex = new RegExp(`#${oldId}(?![a-zA-Z0-9_-])`, 'g');
+                    updatedCssCode = updatedCssCode.replace(idRegex, `#${newId}`);
+                });
+                
+                console.log(`  Updated CSS: ${updatedCssCode.substring(0, 200)}...`);
+                
+                newItem.settings.cssCode = updatedCssCode;
+            }
+            
+            // Remap custom JS code - update class names and element IDs
+            if (item.settings.javascriptCode) {
+                let updatedJsCode = item.settings.javascriptCode;
+                
+                // Replace class names in JS selectors
+                Object.entries(classNameMap).forEach(([oldName, newName]) => {
+                    const oldNameEscaped = oldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    const jsSelectorRegex = new RegExp(`(['"])${oldNameEscaped}([^a-zA-Z0-9_-]|\\1)`, 'g');
+                    updatedJsCode = updatedJsCode.replace(jsSelectorRegex, `$1${newName}$2`);
+                });
+                
+                // Replace element IDs in JS
+                Object.entries(contentIdMap).forEach(([oldId, newId]) => {
+                    const idRegex = new RegExp(`(['"])${oldId}(['"])`, 'g');
+                    updatedJsCode = updatedJsCode.replace(idRegex, `$1${newId}$2`);
+                });
+                
+                newItem.settings.javascriptCode = updatedJsCode;
+            }
+            
+            // Handle extrasCustomQueryCode - update class names and element IDs in custom HTML/CSS
+            if (item.settings.extrasCustomQueryCode) {
+                let updatedCustomCode = item.settings.extrasCustomQueryCode;
+                
+                // Replace class names in the custom code (both CSS and HTML)
+                Object.entries(classNameMap).forEach(([oldName, newName]) => {
+                    const oldNameEscaped = oldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    const oldRoot = extractRoot(oldName);
+                    const newRoot = extractRoot(newName);
+                    
+                    // Match class names in CSS selectors
+                    const simpleClassRegex = new RegExp(`\\.${oldNameEscaped}([^a-zA-Z0-9_-]|$)`, 'g');
+                    updatedCustomCode = updatedCustomCode.replace(simpleClassRegex, `.${newName}$1`);
+                    
+                    // Match BEM-style class names in CSS selectors (e.g., .card-feature-61__wrapper -> .card-new-prefix-61__wrapper)
+                    const bemClassRegex = new RegExp(`\\.${oldRoot.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(__[a-zA-Z0-9_-]+)`, 'g');
+                    updatedCustomCode = updatedCustomCode.replace(bemClassRegex, `.${newRoot}$1`);
+                    
+                    // Match class names in HTML class attributes
+                    const htmlClassRegex = new RegExp(`class=["']([^"']*\\s)?${oldNameEscaped}(\\s[^"']*)?["']`, 'g');
+                    updatedCustomCode = updatedCustomCode.replace(htmlClassRegex, (match, before, after) => {
+                        const beforePart = before || '';
+                        const afterPart = after || '';
+                        return `class="${beforePart}${newName}${afterPart}"`;
+                    });
+                });
+                
+                // Replace element IDs in custom code (both CSS and HTML)
+                Object.entries(contentIdMap).forEach(([oldId, newId]) => {
+                    // Replace IDs in CSS selectors
+                    const cssIdRegex = new RegExp(`#${oldId}(?![a-zA-Z0-9_-])`, 'g');
+                    updatedCustomCode = updatedCustomCode.replace(cssIdRegex, `#${newId}`);
+                    
+                    // Replace IDs in HTML id attributes
+                    const htmlIdRegex = new RegExp(`id=["']${oldId}["']`, 'g');
+                    updatedCustomCode = updatedCustomCode.replace(htmlIdRegex, `id="${newId}"`);
+                });
+                
+                newItem.settings.extrasCustomQueryCode = updatedCustomCode;
+            }
+            
+            // Ensure ALL other settings properties are preserved
+            Object.keys(item.settings).forEach(key => {
+                if (newItem.settings[key] === undefined && item.settings[key] !== undefined) {
+                    newItem.settings[key] = item.settings[key];
+                }
             });
         }
-        // Remap custom CSS code
-        if (item.settings && item.settings.cssCode) {
-            newItem.settings = { ...newItem.settings };
-            let updatedCssCode = item.settings.cssCode;
-            // Replace class names
-            Object.entries(classNameMap).forEach(([oldName, newName]) => {
-                const oldNameEscaped = oldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                const cssRegex = new RegExp(`\\.${oldNameEscaped}([^a-zA-Z0-9_-]|$)`, 'g');
-                updatedCssCode = updatedCssCode.replace(cssRegex, `.${newName}$1`);
-            });
-            // Replace element IDs in CSS (if referenced as #id)
-            Object.entries(contentIdMap).forEach(([oldId, newId]) => {
-                const idRegex = new RegExp(`#${oldId}(?![a-zA-Z0-9_-])`, 'g');
-                updatedCssCode = updatedCssCode.replace(idRegex, `#${newId}`);
-            });
-            newItem.settings.cssCode = updatedCssCode;
-        }
-        // Remap custom JS code
-        if (item.settings && item.settings.javascriptCode) {
-            newItem.settings = { ...newItem.settings };
-            let updatedJsCode = item.settings.javascriptCode;
-            Object.entries(classNameMap).forEach(([oldName, newName]) => {
-                const oldNameEscaped = oldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                // Use a backreference for the quote character
-                const jsSelectorRegex = new RegExp(`(['"])${oldNameEscaped}([^a-zA-Z0-9_-]|\\1)`, 'g');
-                updatedJsCode = updatedJsCode.replace(jsSelectorRegex, `$1${newName}$2`);
-            });
-            Object.entries(contentIdMap).forEach(([oldId, newId]) => {
-                const idRegex = new RegExp(`(['"])${oldId}(['"])`, 'g');
-                updatedJsCode = updatedJsCode.replace(idRegex, `$1${newId}$2`);
-            });
-            newItem.settings.javascriptCode = updatedJsCode;
-        }
+        
+        // Ensure ALL other item properties are preserved (including non-settings properties)
+        Object.keys(item).forEach(key => {
+            if (newItem[key] === undefined && item[key] !== undefined) {
+                newItem[key] = item[key];
+            }
+        });
+        
         return newItem;
     }
     const updatedContent = content.map(remapItem);
+    
+    // Debug: Log the number of content items processed
+    console.log(`Processed ${content.length} content items`);
+    console.log(`Original content types:`, content.map(item => item.name));
+    console.log(`Remapped content types:`, updatedContent.map(item => item.name));
+    
+    // Debug: Check for code elements specifically
+    const originalCodeElements = content.filter(item => item.name === 'code');
+    const updatedCodeElements = updatedContent.filter(item => item.name === 'code');
+    console.log(`Original code elements: ${originalCodeElements.length}`);
+    console.log(`Updated code elements: ${updatedCodeElements.length}`);
+    
     return { content: updatedContent, globalClasses: newGlobalClasses };
 }
 
@@ -579,9 +728,10 @@ function validateCustomCodeUpdates(sectionData, updatedSectionData, customClass)
     const originalContent = sectionData.content;
     const updatedContent = updatedSectionData.content;
     
-    // Check for custom code blocks
+    // Check for custom code blocks (including extrasCustomQueryCode and code elements)
     const customCodeBlocks = originalContent.filter(item => 
-        item.settings && (item.settings.cssCode || item.settings.javascriptCode)
+        (item.settings && (item.settings.cssCode || item.settings.javascriptCode || item.settings.extrasCustomQueryCode)) ||
+        (item.name === 'code' && item.settings && item.settings.cssCode)
     );
     
     if (customCodeBlocks.length > 0) {
@@ -589,20 +739,28 @@ function validateCustomCodeUpdates(sectionData, updatedSectionData, customClass)
         
         // Log what was changed
         customCodeBlocks.forEach((block, index) => {
-            if (block.settings.cssCode) {
-                console.log(`  CSS Block ${index + 1}: Updated with new class names`);
+            if (block.settings && block.settings.cssCode) {
+                console.log(`  CSS Block ${index + 1}: Updated with new class names and element IDs`);
                 console.log(`    Original CSS length: ${block.settings.cssCode.length}`);
                 const updatedBlock = updatedContent.find(item => item.id === block.id);
-                if (updatedBlock && updatedBlock.settings.cssCode) {
+                if (updatedBlock && updatedBlock.settings && updatedBlock.settings.cssCode) {
                     console.log(`    Updated CSS length: ${updatedBlock.settings.cssCode.length}`);
                 }
             }
-            if (block.settings.javascriptCode) {
-                console.log(`  JS Block ${index + 1}: Updated with new class names`);
+            if (block.settings && block.settings.javascriptCode) {
+                console.log(`  JS Block ${index + 1}: Updated with new class names and element IDs`);
                 console.log(`    Original JS length: ${block.settings.javascriptCode.length}`);
                 const updatedBlock = updatedContent.find(item => item.id === block.id);
-                if (updatedBlock && updatedBlock.settings.javascriptCode) {
+                if (updatedBlock && updatedBlock.settings && updatedBlock.settings.javascriptCode) {
                     console.log(`    Updated JS length: ${updatedBlock.settings.javascriptCode.length}`);
+                }
+            }
+            if (block.settings && block.settings.extrasCustomQueryCode) {
+                console.log(`  Custom Query Code Block ${index + 1}: Updated with new class names and element IDs`);
+                console.log(`    Original Custom Code length: ${block.settings.extrasCustomQueryCode.length}`);
+                const updatedBlock = updatedContent.find(item => item.id === block.id);
+                if (updatedBlock && updatedBlock.settings && updatedBlock.settings.extrasCustomQueryCode) {
+                    console.log(`    Updated Custom Code length: ${updatedBlock.settings.extrasCustomQueryCode.length}`);
                 }
             }
         });
@@ -614,7 +772,7 @@ function validateCustomCodeUpdates(sectionData, updatedSectionData, customClass)
 
 // Add warning function for custom code
 function addCustomCodeWarning(sectionName) {
-    addError(2, `⚠️ Section "${sectionName}" contains custom CSS/JS code. Please verify the generated code works correctly.`);
+    addError(2, `⚠️ Section "${sectionName}" contains custom CSS/JS/HTML code. Class names and element IDs have been updated to match the new naming scheme. Please verify the generated code works correctly.`);
 }
 
 function setupCopyButton() {
