@@ -6,7 +6,7 @@ A modern web interface for editing, renaming, and downloading Bricks Builder sec
 
 ## 🚀 Live Demo
 
-Try it here: [https://zmdx4.github.io/brixies-exporter-web/](https://zmdx4.github.io/brixies-exporter-web/)
+Try it here: [https://app.bricksyflow.com/](https://app.bricksyflow.com/)
 
 ---
 
@@ -23,7 +23,7 @@ Try it here: [https://zmdx4.github.io/brixies-exporter-web/](https://zmdx4.githu
 ### Direct Access
 
 - Visit:  
-  `https://zmdx4.github.io/brixies-exporter-web/`
+  `https://app.bricksyflow.com`
 
 ---
 
@@ -54,16 +54,27 @@ Try it here: [https://zmdx4.github.io/brixies-exporter-web/](https://zmdx4.githu
 ## 📁 Repository Structure
 
 brixies-exporter-web/
+│
 ├── index.html # Main web interface
+│
 ├── main.js # Application logic
+│
 ├── style.css # Styles
+│
 ├── sections/ # All section JSONs, organized by framework/category
+│ │
 │ ├── cf/
+│ │ │
 │ │ ├── banner/
+│ │ │
 │ │ └── intro/
+│ │
 │ └── acss/
+│ │
 │ └── ...
+│
 ├── local-metadata-index.json # Auto-generated metadata for all sections
+│
 └── README.md # This file
 
 ---
