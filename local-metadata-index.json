@@ -2982,113 +2982,113 @@
         }
       },
       "team": {
-        "Testimonial Section 1": {
-          "id": "testimonial-section-1",
+        "Team Section 1": {
+          "id": "team-section-1",
           "category": "team",
-          "defaultClass": "brixies-testimonial-section-1",
-          "relativePath": "sections/cf/team/Testimonial Section 1.json"
+          "defaultClass": "brixies-team-section-1",
+          "relativePath": "sections/cf/team/Team Section 1.json"
         },
-        "Testimonial Section 10": {
-          "id": "testimonial-section-10",
+        "Team Section 2": {
+          "id": "team-section-2",
           "category": "team",
-          "defaultClass": "brixies-testimonial-section-10",
-          "relativePath": "sections/cf/team/Testimonial Section 10.json"
+          "defaultClass": "brixies-team-section-2",
+          "relativePath": "sections/cf/team/Team Section 2.json"
         },
-        "Testimonial Section 11": {
-          "id": "testimonial-section-11",
+        "Team Section 3": {
+          "id": "team-section-3",
           "category": "team",
-          "defaultClass": "brixies-testimonial-section-11",
-          "relativePath": "sections/cf/team/Testimonial Section 11.json"
+          "defaultClass": "brixies-team-section-3",
+          "relativePath": "sections/cf/team/Team Section 3.json"
         },
-        "Testimonial Section 12": {
-          "id": "testimonial-section-12",
+        "Team Section 4": {
+          "id": "team-section-4",
           "category": "team",
-          "defaultClass": "brixies-testimonial-section-12",
-          "relativePath": "sections/cf/team/Testimonial Section 12.json"
+          "defaultClass": "brixies-team-section-4",
+          "relativePath": "sections/cf/team/Team Section 4.json"
         },
-        "Testimonial Section 13": {
-          "id": "testimonial-section-13",
+        "Team Section 5": {
+          "id": "team-section-5",
           "category": "team",
-          "defaultClass": "brixies-testimonial-section-13",
-          "relativePath": "sections/cf/team/Testimonial Section 13.json"
+          "defaultClass": "brixies-team-section-5",
+          "relativePath": "sections/cf/team/Team Section 5.json"
         },
-        "Testimonial Section 14": {
-          "id": "testimonial-section-14",
+        "Team Section 6": {
+          "id": "team-section-6",
           "category": "team",
-          "defaultClass": "brixies-testimonial-section-14",
-          "relativePath": "sections/cf/team/Testimonial Section 14.json"
+          "defaultClass": "brixies-team-section-6",
+          "relativePath": "sections/cf/team/Team Section 6.json"
         },
-        "Testimonial Section 15": {
-          "id": "testimonial-section-15",
+        "Team Section 7": {
+          "id": "team-section-7",
           "category": "team",
-          "defaultClass": "brixies-testimonial-section-15",
-          "relativePath": "sections/cf/team/Testimonial Section 15.json"
+          "defaultClass": "brixies-team-section-7",
+          "relativePath": "sections/cf/team/Team Section 7.json"
         },
-        "Testimonial Section 16": {
-          "id": "testimonial-section-16",
+        "Team Section 8": {
+          "id": "team-section-8",
           "category": "team",
-          "defaultClass": "brixies-testimonial-section-16",
-          "relativePath": "sections/cf/team/Testimonial Section 16.json"
+          "defaultClass": "brixies-team-section-8",
+          "relativePath": "sections/cf/team/Team Section 8.json"
         },
-        "Testimonial Section 17": {
-          "id": "testimonial-section-17",
+        "Team Section 9": {
+          "id": "team-section-9",
           "category": "team",
-          "defaultClass": "brixies-testimonial-section-17",
-          "relativePath": "sections/cf/team/Testimonial Section 17.json"
+          "defaultClass": "brixies-team-section-9",
+          "relativePath": "sections/cf/team/Team Section 9.json"
         },
-        "Testimonial Section 18": {
-          "id": "testimonial-section-18",
+        "Team Section 10": {
+          "id": "team-section-10",
           "category": "team",
-          "defaultClass": "brixies-testimonial-section-18",
-          "relativePath": "sections/cf/team/Testimonial Section 18.json"
+          "defaultClass": "brixies-team-section-10",
+          "relativePath": "sections/cf/team/Team Section 10.json"
         },
-        "Testimonial Section 2": {
-          "id": "testimonial-section-2",
+        "Team Section 11": {
+          "id": "team-section-11",
           "category": "team",
-          "defaultClass": "brixies-testimonial-section-2",
-          "relativePath": "sections/cf/team/Testimonial Section 2.json"
+          "defaultClass": "brixies-team-section-11",
+          "relativePath": "sections/cf/team/Team Section 11.json"
         },
-        "Testimonial Section 3": {
-          "id": "testimonial-section-3",
+        "Team Section 12": {
+          "id": "team-section-12",
           "category": "team",
-          "defaultClass": "brixies-testimonial-section-3",
-          "relativePath": "sections/cf/team/Testimonial Section 3.json"
+          "defaultClass": "brixies-team-section-12",
+          "relativePath": "sections/cf/team/Team Section 12.json"
         },
-        "Testimonial Section 4": {
-          "id": "testimonial-section-4",
+        "Team Section 13": {
+          "id": "team-section-13",
           "category": "team",
-          "defaultClass": "brixies-testimonial-section-4",
-          "relativePath": "sections/cf/team/Testimonial Section 4.json"
+          "defaultClass": "brixies-team-section-13",
+          "relativePath": "sections/cf/team/Team Section 13.json"
         },
-        "Testimonial Section 5": {
-          "id": "testimonial-section-5",
+        "Team Section 14": {
+          "id": "team-section-14",
           "category": "team",
-          "defaultClass": "brixies-testimonial-section-5",
-          "relativePath": "sections/cf/team/Testimonial Section 5.json"
+          "defaultClass": "brixies-team-section-14",
+          "relativePath": "sections/cf/team/Team Section 14.json"
         },
-        "Testimonial Section 6": {
-          "id": "testimonial-section-6",
+        "Team Section 15": {
+          "id": "team-section-15",
           "category": "team",
-          "defaultClass": "brixies-testimonial-section-6",
-          "relativePath": "sections/cf/team/Testimonial Section 6.json"
+          "defaultClass": "brixies-team-section-15",
+          "relativePath": "sections/cf/team/Team Section 15.json"
         },
-        "Testimonial Section 7": {
-          "id": "testimonial-section-7",
+        "Team Section 16": {
+          "id": "team-section-16",
           "category": "team",
-          "defaultClass": "brixies-testimonial-section-7",
-          "relativePath": "sections/cf/team/Testimonial Section 7.json"
+          "defaultClass": "brixies-team-section-16",
+          "relativePath": "sections/cf/team/Team Section 16.json"
         },
-        "Testimonial Section 8": {
-          "id": "testimonial-section-8",
+        "Team Section 17": {
+          "id": "team-section-17",
           "category": "team",
-          "defaultClass": "brixies-testimonial-section-8",
-          "relativePath": "sections/cf/team/Testimonial Section 8.json"
+          "defaultClass": "brixies-team-section-17",
+          "relativePath": "sections/cf/team/Team Section 17.json"
         },
-        "Testimonial Section 9": {
-          "id": "testimonial-section-9",
+        "Team Section 18": {
+          "id": "team-section-18",
           "category": "team",
-          "defaultClass": "brixies-testimonial-section-9",
-          "relativePath": "sections/cf/team/Testimonial Section 9.json"
+          "defaultClass": "brixies-team-section-18",
+          "relativePath": "sections/cf/team/Team Section 18.json"
         }
       },
       "testimonial": {
