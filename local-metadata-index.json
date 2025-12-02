@@ -2988,54 +2988,6 @@
           "defaultClass": "brixies-team-section-1",
           "relativePath": "sections/cf/team/Team Section 1.json"
         },
-        "Team Section 2": {
-          "id": "team-section-2",
-          "category": "team",
-          "defaultClass": "brixies-team-section-2",
-          "relativePath": "sections/cf/team/Team Section 2.json"
-        },
-        "Team Section 3": {
-          "id": "team-section-3",
-          "category": "team",
-          "defaultClass": "brixies-team-section-3",
-          "relativePath": "sections/cf/team/Team Section 3.json"
-        },
-        "Team Section 4": {
-          "id": "team-section-4",
-          "category": "team",
-          "defaultClass": "brixies-team-section-4",
-          "relativePath": "sections/cf/team/Team Section 4.json"
-        },
-        "Team Section 5": {
-          "id": "team-section-5",
-          "category": "team",
-          "defaultClass": "brixies-team-section-5",
-          "relativePath": "sections/cf/team/Team Section 5.json"
-        },
-        "Team Section 6": {
-          "id": "team-section-6",
-          "category": "team",
-          "defaultClass": "brixies-team-section-6",
-          "relativePath": "sections/cf/team/Team Section 6.json"
-        },
-        "Team Section 7": {
-          "id": "team-section-7",
-          "category": "team",
-          "defaultClass": "brixies-team-section-7",
-          "relativePath": "sections/cf/team/Team Section 7.json"
-        },
-        "Team Section 8": {
-          "id": "team-section-8",
-          "category": "team",
-          "defaultClass": "brixies-team-section-8",
-          "relativePath": "sections/cf/team/Team Section 8.json"
-        },
-        "Team Section 9": {
-          "id": "team-section-9",
-          "category": "team",
-          "defaultClass": "brixies-team-section-9",
-          "relativePath": "sections/cf/team/Team Section 9.json"
-        },
         "Team Section 10": {
           "id": "team-section-10",
           "category": "team",
@@ -3089,6 +3041,54 @@
           "category": "team",
           "defaultClass": "brixies-team-section-18",
           "relativePath": "sections/cf/team/Team Section 18.json"
+        },
+        "Team Section 2": {
+          "id": "team-section-2",
+          "category": "team",
+          "defaultClass": "brixies-team-section-2",
+          "relativePath": "sections/cf/team/Team Section 2.json"
+        },
+        "Team Section 3": {
+          "id": "team-section-3",
+          "category": "team",
+          "defaultClass": "brixies-team-section-3",
+          "relativePath": "sections/cf/team/Team Section 3.json"
+        },
+        "Team Section 4": {
+          "id": "team-section-4",
+          "category": "team",
+          "defaultClass": "brixies-team-section-4",
+          "relativePath": "sections/cf/team/Team Section 4.json"
+        },
+        "Team Section 5": {
+          "id": "team-section-5",
+          "category": "team",
+          "defaultClass": "brixies-team-section-5",
+          "relativePath": "sections/cf/team/Team Section 5.json"
+        },
+        "Team Section 6": {
+          "id": "team-section-6",
+          "category": "team",
+          "defaultClass": "brixies-team-section-6",
+          "relativePath": "sections/cf/team/Team Section 6.json"
+        },
+        "Team Section 7": {
+          "id": "team-section-7",
+          "category": "team",
+          "defaultClass": "brixies-team-section-7",
+          "relativePath": "sections/cf/team/Team Section 7.json"
+        },
+        "Team Section 8": {
+          "id": "team-section-8",
+          "category": "team",
+          "defaultClass": "brixies-team-section-8",
+          "relativePath": "sections/cf/team/Team Section 8.json"
+        },
+        "Team Section 9": {
+          "id": "team-section-9",
+          "category": "team",
+          "defaultClass": "brixies-team-section-9",
+          "relativePath": "sections/cf/team/Team Section 9.json"
         }
       },
       "testimonial": {
@@ -3271,5 +3271,5 @@
       }
     }
   },
-  "lastUpdated": "2025-12-02T01:27:23.702Z"
+  "lastUpdated": "2025-12-02T06:31:08.968Z"
 }
